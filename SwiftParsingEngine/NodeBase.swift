@@ -14,4 +14,14 @@ public class NodeBase {
         fatalError("Abstract method \(__FUNCTION__) not implemented")
     }
     
+    public init() {}
+    
+}
+
+public class TerminalNode: NodeBase {
+    public var token: Token
+    
+    init(token: Token) {
+        self.token = token
+    }
 }

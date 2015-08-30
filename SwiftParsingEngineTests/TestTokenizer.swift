@@ -19,14 +19,6 @@ import SwiftParsingEngine
 [14]`:
 [15]``
 */
-class Token: TokenBase {
-    override class func getEndToken(position: Int) -> Token {
-        return EndToken("", position)
-    }
-}
-
-class EndToken: Token {}
-
 class HTMLTextToken: Token {}
 
 class NilToken: Token {}
@@ -34,26 +26,26 @@ class TrueToken: Token {}
 class FalseToken: Token {}
 
 class IdentifierToken: Token {
-    class func createInstance(string: String, _ position: Int) -> Token {
+    class func createInstance(string: String, _ range: NSRange) -> Token {
         switch string {
         case "if":
-            return IfToken(string, position)
+            return IfToken(string, range)
         case "for":
-            return ForToken(string, position)
+            return ForToken(string, range)
         case "in":
-            return InToken(string, position)
+            return InToken(string, range)
         case "nil":
-            return NilToken(string, position)
+            return NilToken(string, range)
         case "true":
-            return TrueToken(string, position)
+            return TrueToken(string, range)
         case "false":
-            return FalseToken(string, position)
+            return FalseToken(string, range)
         default:
             if string.hasPrefix("`") && string.hasSuffix("`") {
-                let range = string.startIndex.successor()..<string.endIndex.predecessor()
-                return IdentifierToken(string.substringWithRange(range), position)
+                let nameRange = string.startIndex.successor()..<string.endIndex.predecessor()
+                return IdentifierToken(string.substringWithRange(nameRange), range)
             }
-            return IdentifierToken(string, position)
+            return IdentifierToken(string, range)
         }
     }
     
@@ -62,14 +54,14 @@ class IdentifierToken: Token {
 class QToken: Token {}
 class DotToken: Token {}
 class OperatorToken: Token {
-    class func createInstance(string: String, _ position: Int) -> Token {
+    class func createInstance(string: String, _ range: NSRange) -> Token {
         switch string {
         case "?":
-            return QToken(string, position)
+            return QToken(string, range)
         case ".":
-            return DotToken(string, position)
+            return DotToken(string, range)
         default:
-            return OperatorToken(string, position)
+            return OperatorToken(string, range)
         }
     }
     
@@ -101,24 +93,24 @@ class ClosingTag: Token {}
 class NewLine: Token {}
 class WhiteSpace: Token {}
 
-struct LexicalState: StateType {
+struct LexicalContext: LexicalContextType {
     private(set) var rawValue: Int
     init(rawValue: Int) {self.rawValue = rawValue}
     
-    static let HTML = LexicalState(rawValue: 1<<0)  //Initial state: leads arbitrary HTML text
-    static let Inline = LexicalState(rawValue: 1<<1) //Leaded by {:, contains HTML text except }
-    static let LineEscape = LexicalState(rawValue: 1<<2) //Leaded by `: contains HTML text except NewLine
-    static let TagEscape = LexicalState(rawValue: 1<<3) //Leaded by opening tag, terminated by corresponding closing tag
+    static let HTML = LexicalContext(rawValue: 1<<0)  //Initial state: leads arbitrary HTML text
+    static let Inline = LexicalContext(rawValue: 1<<1) //Leaded by {:, contains HTML text except }
+    static let LineEscape = LexicalContext(rawValue: 1<<2) //Leaded by `: contains HTML text except NewLine
+    static let TagEscape = LexicalContext(rawValue: 1<<3) //Leaded by opening tag, terminated by corresponding closing tag
     
-    static let Simple = LexicalState(rawValue: 1<<4)
-    static let Expression = LexicalState(rawValue: 1<<5)
-    static let Block = LexicalState(rawValue: 1<<6)
+    static let Simple = LexicalContext(rawValue: 1<<4)
+    static let Expression = LexicalContext(rawValue: 1<<5)
+    static let Block = LexicalContext(rawValue: 1<<6)
     
-    static let Comment = LexicalState(rawValue: 1<<7)
+    static let Comment = LexicalContext(rawValue: 1<<7)
     
-    static let Initial: LexicalState = .HTML
+    static let Initial: LexicalContext = .HTML
 }
-typealias TM = TokenMatcher<LexicalState,Token>
+typealias TM = TokenMatcher<LexicalContext>
 let TAG_NAME = "[_:\\p{L}][-._:\\p{L}\\p{Nd}\\p{Mn}]*"
 let OP_CHARS = "[-/=+!*%<>&|^?~]"
 let lexicalSyntax: [TM] = [
@@ -153,16 +145,16 @@ let lexicalSyntax: [TM] = [
     
     ("(`:)", [.Block], {LineEscape($0)}),
     
-    ("`(//.*(?:\r\n|\r|\n|$))", [.HTML,.TagEscape,.Simple], {NewLine($0)}),
+    ("`//.*((?:\r\n|\r|\n|$))", [.HTML,.TagEscape,.Simple], {NewLine($0)}),
     ("([^`_a-zA-Z\\.\\{\\[\\(](?:[^`\r\n\\}<]|``)+)", .Simple, {HTMLTextToken($0)}),
-    ("((?://.*)?(?:\r\n|\r|\n|$))", [.Expression,.Block], {NewLine($0)}),
+    ("(?://.*)?((?:\r\n|\r|\n|$))", [.Expression,.Block], {NewLine($0)}),
     ("([\t \\p{Z}]+)", [.Expression,.Block], {WhiteSpace($0)}),
     
     ("(\\.+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
     ("("+OP_CHARS+"+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
 ].map(TM.init)
-class Tokenizer: TokenizerBase<LexicalState,Token> {
-    override init(string: String, syntax: [TM]) {
+class Tokenizer: TokenizerBase<LexicalContext> {
+    override init(string: String?, syntax: [TM]) {
         super.init(string: string, syntax: syntax)
     }
 }

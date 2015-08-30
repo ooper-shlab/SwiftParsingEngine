@@ -23,80 +23,84 @@ class InternedString {
         }
     }
 }
-public class TokenBase {
+public class Token {
     public var string: String
-    ///position in UTF-16 in source
-    var position: Int
+    ///range in UTF-16 in source
+    var range: NSRange
 //    class func createToken(string: String) -> TokenBase {
 //        fatalError("Abstract method \(__FUNCTION__) not implemented")
 //    }
-    public class func getEndToken(position: Int) -> Self {
+    public class func getEndToken(range: NSRange) -> Self {
         fatalError("Abstract method \(__FUNCTION__) not implemented")
     }
     
-    public init(_ string: String, _ position: Int) {
+    public init(_ string: String, _ range: NSRange) {
         self.string = string
-        self.position = position
+        self.range = range
     }
 }
 
-public protocol StateType: OptionSetType {
+public class EndToken: Token {}
+
+
+public protocol LexicalContextType: OptionSetType {
     static var Initial: Self {get}
-//    static var AllStates: [Self] {get}
 }
-public class TokenMatcher<S: StateType, T: TokenBase where S.Element == S> {
+
+public class TokenMatcher<C: LexicalContextType where C.Element == C> {
     
-    public typealias TokenizingProc = (String, Int)->T
+    public typealias TokenizingProc = (String, NSRange)->Token
     
     var regex: NSRegularExpression
-    var state: S
+    var context: C
     var proc: TokenizingProc
-    public init(_ pattern: String, _ state: S, _ proc: TokenizingProc) {
+    public init(_ pattern: String, _ context: C, _ proc: TokenizingProc) {
         self.regex = try! NSRegularExpression(pattern: "^" + pattern, options: [])
-        self.state = state
+        self.context = context
         self.proc = proc
     }
 }
 public enum TokenizerError: ErrorType {
     case NoMatchingPattern(String)
 }
-public class TokenizerBase<S: StateType, T: TokenBase where S.Element == S> {
+public class TokenizerBase<C: LexicalContextType where C.Element == C> {
     
-    public var currentState: S = .Initial
+    public var currentContext: C = .Initial
     ///position in UTF-16
-    var currentPosition: Int = 0
-    var parsingState: (S, Int) {
-        get {return (currentState, currentPosition)}
-        set {(currentState, currentPosition) = newValue}
-    }
+    public var currentPosition: Int = 0
     
     private var string: String
-    private var matchers: [TokenMatcher<S,T>] = []
+    private let matchers: [TokenMatcher<C>]
     
-    public init(string: String, syntax: [TokenMatcher<S,T>]) {
-        self.string = string
+    public init(string: String?, syntax: [TokenMatcher<C>]) {
+        self.string = string ?? ""
         self.matchers = syntax
-        //super.init()
     }
     
-    public func getToken() throws -> T {
+    public func reset(string: String) {
+        self.string = string
+        currentContext = .Initial
+        currentPosition = 0
+    }
+    
+    public func getToken() throws -> Token {
         let range = NSRange(currentPosition..<string.utf16.count)
         if range.length == 0 {
-            return T.getEndToken(range.location)
+            return EndToken("", range)
         }
         for matcher in matchers
-        where matcher.state.contains(currentState) {
-            //print("--"+matcher.regex.pattern.debugDescription)
+        where matcher.context.contains(currentContext) {
+            print("--"+matcher.regex.pattern.debugDescription)
             if let match = matcher.regex.firstMatchInString(string, options: [], range: range) {
                 let range = match.numberOfRanges == 1 ? match.range : match.rangeAtIndex(1)
                 let substring = (string as NSString).substringWithRange(range)
-                let token = matcher.proc(substring, currentPosition)
+                let token = matcher.proc(substring, match.range)
                 currentPosition += match.range.length
                 return token
             }
         }
         let head = (string as NSString).substringWithRange(NSRange(currentPosition..<currentPosition+5))
-        throw TokenizerError.NoMatchingPattern("No matches in current state: \(currentState.rawValue) for \(head.debugDescription)")
+        throw TokenizerError.NoMatchingPattern("No matches in current state: \(currentContext.rawValue) for \(head.debugDescription)")
     }
 
 }
