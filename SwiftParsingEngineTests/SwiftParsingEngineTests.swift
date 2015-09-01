@@ -39,7 +39,7 @@ class SwiftParsingEngineTests: XCTestCase {
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        tokenizer = Tokenizer(string: testedString, syntax: lexicalSyntax)
+        tokenizer = Tokenizer(string: testedString)
     }
     
     override func tearDown() {
@@ -387,6 +387,36 @@ class SwiftParsingEngineTests: XCTestCase {
         var string = (matches[0].nodes[0] as! HTMLOutputNode).text
         print(string.debugDescription)
         XCTAssert(matches.count == 1 && string.hasPrefix("\n<") && string.hasSuffix("  "))
+    }
+    
+    let simpleTestedString =
+    "var i = 0, s = ''"
+    
+    func testTokenizer2() {
+        let st = SimpleTokenizer(string: simpleTestedString)
+        do {
+            let t1 = try st.getToken()
+            XCTAssert(t1 is SimpleIdentifierToken && t1.string == "var")
+            let t2 = try st.getToken()
+            XCTAssert(t2 is SimpleIdentifierToken && t2.string == "i")
+            let t3 = try st.getToken()
+            XCTAssert(t3 is SimpleSymbolToken && t3.string == "=")
+            let t4 = try st.getToken()
+            XCTAssert(t4 is SimpleNumericLiteralToken && t4.string == "0")
+            let t5 = try st.getToken()
+            XCTAssert(t5 is SimpleSymbolToken && t5.string == ",")
+            let t6 = try st.getToken()
+            XCTAssert(t6 is SimpleIdentifierToken && t6.string == "s")
+            let t7 = try st.getToken()
+            XCTAssert(t7 is SimpleSymbolToken && t7.string == "=")
+            let t8 = try st.getToken()
+            XCTAssert(t8 is SimpleStringLiteralToken && t8.string == "''")
+        } catch let error as TokenizerError {
+            print(error)
+            XCTFail()
+        } catch _ {
+            fatalError()
+        }
     }
     
     func testPerformanceExample() {

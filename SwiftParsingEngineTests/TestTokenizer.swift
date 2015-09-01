@@ -110,51 +110,53 @@ struct LexicalContext: LexicalContextType {
     
     static let Initial: LexicalContext = .HTML
 }
-typealias TM = TokenMatcher<LexicalContext>
-let TAG_NAME = "[_:\\p{L}][-._:\\p{L}\\p{Nd}\\p{Mn}]*"
-let OP_CHARS = "[-/=+!*%<>&|^?~]"
-let lexicalSyntax: [TM] = [
-    ("((?:[^`]|``)+)", .HTML, {HTMLTextToken($0)}),
-    ("((?:[^`*]|``|\\*[^>])+)", .Comment, {HTMLTextToken($0)}),
-    ("((?:[^`\r\n\\}]|``)+)", .Inline, {HTMLTextToken($0)}),
-    ("((?:[^`\r\n]|``)+)", .LineEscape, {HTMLTextToken($0)}),
-    ("((?:[^`<]|``|<[^/_:\\p{L}]|</[^_:\\p{L}])+)", .TagEscape, {HTMLTextToken($0)}),
-    
-    ("<(text)\\s*>", [.Block,.Expression], {TagOpener($0)}),
-    ("<("+TAG_NAME+")", [.TagEscape,.Block,.Expression], {TagOpener($0)}),
-    ("</("+TAG_NAME+")\\s*>", .TagEscape, {ClosingTag($0)}),
-    
-    ("`([_a-zA-Z][_a-zA-Z0-9]*)", [.HTML,.Inline,.LineEscape,.TagEscape], {IdentifierToken.createInstance($0)}),
-    ("`(\\$[0-9]+)", [.HTML,.Inline,.LineEscape,.TagEscape], {IdentifierToken.createInstance($0)}),
-    ("([_\\p{L}][_\\p{L}\\p{Nd}\\p{Mn}]*)", [.Expression,.Block], {IdentifierToken.createInstance($0)}),
-    ("\\.([_a-zA-Z][_a-zA-Z0-9]*)", .Simple, {IdentifierToken.createInstance($0)}),
-    ("\\.([0-9]+)", .Simple, {IdentifierToken.createInstance($0)}),
-    
-    ("`(<\\*)", [.HTML,.Comment,.Inline,.LineEscape,.TagEscape], {CommentStart($0)}),
-    ("(\\*>)", [.Comment], {CommentEnd($0)}),
-    
-    ("`(\\()", [.HTML,.Comment,.Inline,.LineEscape,.TagEscape], {LeftParenthesis($0)}),
-    ("(\\()", [.Expression,.Simple,.Block], {LeftParenthesis($0)}),
-    ("(\\))", [.Expression,.Simple,.Block], {RightParenthesis($0)}),
-    ("`(\\{)", [.HTML,.Comment,.Inline,.LineEscape,.TagEscape], {LeftBrace($0)}),
-    ("(\\{:)", [.Expression,.Block], {InlineLeader($0)}),
-    ("(\\{)", [.Expression,.Simple,.Block], {LeftBrace($0)}),
-    ("(\\})", [.Expression,.Block,.Inline], {RightBrace($0)}),
-    ("(\\[)", [.Expression,.Simple,.Block], {LeftBracket($0)}),
-    ("(\\])", [.Expression,.Block], {RightBracket($0)}),
-    
-    ("(`:)", [.Block], {LineEscape($0)}),
-    
-    ("`//.*((?:\r\n|\r|\n|$))", [.HTML,.TagEscape,.Simple], {NewLine($0)}),
-    ("([^`_a-zA-Z\\.\\{\\[\\(](?:[^`\r\n\\}<]|``)+)", .Simple, {HTMLTextToken($0)}),
-    ("(?://.*)?((?:\r\n|\r|\n|$))", [.Expression,.Block], {NewLine($0)}),
-    ("([\t \\p{Z}]+)", [.Expression,.Block], {WhiteSpace($0)}),
-    
-    ("(\\.+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
-    ("("+OP_CHARS+"+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
-].map(TM.init)
 class Tokenizer: TokenizerBase<LexicalContext> {
-    override init(string: String?, syntax: [TM]) {
-        super.init(string: string, syntax: syntax)
+    override init(string: String?) {
+        super.init(string: string)
+    }
+    
+    let TAG_NAME = "[_:\\p{L}][-._:\\p{L}\\p{Nd}\\p{Mn}]*"
+    let OP_CHARS = "[-/=+!*%<>&|^?~]"
+    override var matchers: [TM] {
+        return [
+            ("((?:[^`]|``)+)", .HTML, {HTMLTextToken($0)}),
+            ("((?:[^`*]|``|\\*[^>])+)", .Comment, {HTMLTextToken($0)}),
+            ("((?:[^`\r\n\\}]|``)+)", .Inline, {HTMLTextToken($0)}),
+            ("((?:[^`\r\n]|``)+)", .LineEscape, {HTMLTextToken($0)}),
+            ("((?:[^`<]|``|<[^/_:\\p{L}]|</[^_:\\p{L}])+)", .TagEscape, {HTMLTextToken($0)}),
+            
+            ("<(text)\\s*>", [.Block,.Expression], {TagOpener($0)}),
+            ("<("+TAG_NAME+")", [.TagEscape,.Block,.Expression], {TagOpener($0)}),
+            ("</("+TAG_NAME+")\\s*>", .TagEscape, {ClosingTag($0)}),
+            
+            ("`([_a-zA-Z][_a-zA-Z0-9]*)", [.HTML,.Inline,.LineEscape,.TagEscape], {IdentifierToken.createInstance($0)}),
+            ("`(\\$[0-9]+)", [.HTML,.Inline,.LineEscape,.TagEscape], {IdentifierToken.createInstance($0)}),
+            ("([_\\p{L}][_\\p{L}\\p{Nd}\\p{Mn}]*)", [.Expression,.Block], {IdentifierToken.createInstance($0)}),
+            ("\\.([_a-zA-Z][_a-zA-Z0-9]*)", .Simple, {IdentifierToken.createInstance($0)}),
+            ("\\.([0-9]+)", .Simple, {IdentifierToken.createInstance($0)}),
+            
+            ("`(<\\*)", [.HTML,.Comment,.Inline,.LineEscape,.TagEscape], {CommentStart($0)}),
+            ("(\\*>)", [.Comment], {CommentEnd($0)}),
+            
+            ("`(\\()", [.HTML,.Comment,.Inline,.LineEscape,.TagEscape], {LeftParenthesis($0)}),
+            ("(\\()", [.Expression,.Simple,.Block], {LeftParenthesis($0)}),
+            ("(\\))", [.Expression,.Simple,.Block], {RightParenthesis($0)}),
+            ("`(\\{)", [.HTML,.Comment,.Inline,.LineEscape,.TagEscape], {LeftBrace($0)}),
+            ("(\\{:)", [.Expression,.Block], {InlineLeader($0)}),
+            ("(\\{)", [.Expression,.Simple,.Block], {LeftBrace($0)}),
+            ("(\\})", [.Expression,.Block,.Inline], {RightBrace($0)}),
+            ("(\\[)", [.Expression,.Simple,.Block], {LeftBracket($0)}),
+            ("(\\])", [.Expression,.Block], {RightBracket($0)}),
+            
+            ("(`:)", [.Block], {LineEscape($0)}),
+            
+            ("`//.*((?:\r\n|\r|\n|$))", [.HTML,.TagEscape,.Simple], {NewLine($0)}),
+            ("([^`_a-zA-Z\\.\\{\\[\\(](?:[^`\r\n\\}<]|``)+)", .Simple, {HTMLTextToken($0)}),
+            ("(?://.*)?((?:\r\n|\r|\n|$))", [.Expression,.Block], {NewLine($0)}),
+            ("([\t \\p{Z}]+)", [.Expression,.Block], {WhiteSpace($0)}),
+            
+            ("(\\.+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
+            ("("+OP_CHARS+"+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
+            ].map(TM.init)
     }
 }

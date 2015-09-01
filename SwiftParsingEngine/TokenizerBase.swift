@@ -25,14 +25,9 @@ class InternedString {
 }
 public class Token {
     public var string: String
+    
     ///range in UTF-16 in source
     var range: NSRange
-//    class func createToken(string: String) -> TokenBase {
-//        fatalError("Abstract method \(__FUNCTION__) not implemented")
-//    }
-    public class func getEndToken(range: NSRange) -> Self {
-        fatalError("Abstract method \(__FUNCTION__) not implemented")
-    }
     
     public init(_ string: String, _ range: NSRange) {
         self.string = string
@@ -70,11 +65,13 @@ public class TokenizerBase<C: LexicalContextType where C.Element == C> {
     public var currentPosition: Int = 0
     
     private var string: String
-    private let matchers: [TokenMatcher<C>]
+    public typealias TM = TokenMatcher<C>
+    public var matchers: [TM] {
+        fatalError("Abstract method \(__FUNCTION__) not implemented")
+    }
     
-    public init(string: String?, syntax: [TokenMatcher<C>]) {
+    public init(string: String?) {
         self.string = string ?? ""
-        self.matchers = syntax
     }
     
     public func reset(string: String) {
