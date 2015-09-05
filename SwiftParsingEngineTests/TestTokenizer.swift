@@ -110,6 +110,9 @@ struct LexicalContext: LexicalContextType {
     
     static let Initial: LexicalContext = .HTML
 }
+extension LexicalContext: Hashable {
+    var hashValue: Int {return rawValue}
+}
 class Tokenizer: TokenizerBase<LexicalContext> {
     override init(string: String?) {
         super.init(string: string)

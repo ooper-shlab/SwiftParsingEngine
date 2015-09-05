@@ -102,7 +102,7 @@ public class AnyPattern: PatternBase {
 }
 
 public class NonTerminalBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase {
+where C.Element == C, S.ContextType == C, C: Hashable>: PatternBase {
     public typealias NodeConstructorType = SyntaxMatch<C,S> -> NodeBase
     
     public var nodeConstructor: NodeConstructorType?
@@ -219,7 +219,7 @@ public class AnySymbol: PatternBase {
 }
 
 class ToStateBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>:  PatternBase {
+where C.Element == C, S.ContextType == C, C: Hashable>:  PatternBase {
     var context: C
     init(_ context: C) {
         self.context = context
@@ -352,7 +352,7 @@ public protocol ParsingStateType {
     init()
 }
 public class ParserBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C> {
+where C.Element == C, S.ContextType == C, C: Hashable> {
     public var tokenizer: TokenizerBase<C>
     public var state: S = S()
     public func setup() {

@@ -42,6 +42,9 @@ struct SimpleContext: LexicalContextType {
     
     static let Initial = SimpleContext(rawValue: 1<<0)  //Initial context: the only context for SimpleTokenizer
 }
+extension SimpleContext: Hashable {
+    var hashValue: Int {return rawValue}
+}
 
 //
 //MARK: Type 3. Tokenizer class
