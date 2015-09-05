@@ -19,19 +19,29 @@ class InternedString {
         if let result = internDictionary[string] {
             return result
         } else {
-            return InternedString(string: string)
+            let result = InternedString(string: string)
+            internDictionary[string] = result
+            return result
         }
     }
 }
+
 public class Token {
     public var string: String
-    
     ///range in UTF-16 in source
     var range: NSRange
     
     public init(_ string: String, _ range: NSRange) {
-        self.string = string
         self.range = range
+        self.string = string
+    }
+    public init(_ string: String) {
+        self.string = string
+        self.range = NSRange()
+    }
+    public init() {
+        self.string = ""
+        self.range = NSRange()
     }
 }
 
@@ -87,7 +97,7 @@ public class TokenizerBase<C: LexicalContextType where C.Element == C> {
         }
         for matcher in matchers
         where matcher.context.contains(currentContext) {
-            print("--"+matcher.regex.pattern.debugDescription)
+            //print("--"+matcher.regex.pattern.debugDescription)
             if let match = matcher.regex.firstMatchInString(string, options: [], range: range) {
                 let range = match.numberOfRanges == 1 ? match.range : match.rangeAtIndex(1)
                 let substring = (string as NSString).substringWithRange(range)

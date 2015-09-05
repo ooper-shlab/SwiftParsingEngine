@@ -390,7 +390,8 @@ class SwiftParsingEngineTests: XCTestCase {
     }
     
     let simpleTestedString =
-    "var i = 0, s = ''"
+    "var x = 0" + NL
+        + "if x == 0 {print('')}"
     
     func testTokenizer2() {
         let st = SimpleTokenizer(string: simpleTestedString)
@@ -398,19 +399,35 @@ class SwiftParsingEngineTests: XCTestCase {
             let t1 = try st.getToken()
             XCTAssert(t1 is SimpleIdentifierToken && t1.string == "var")
             let t2 = try st.getToken()
-            XCTAssert(t2 is SimpleIdentifierToken && t2.string == "i")
+            XCTAssert(t2 is SimpleIdentifierToken && t2.string == "x")
             let t3 = try st.getToken()
             XCTAssert(t3 is SimpleSymbolToken && t3.string == "=")
             let t4 = try st.getToken()
             XCTAssert(t4 is SimpleNumericLiteralToken && t4.string == "0")
             let t5 = try st.getToken()
-            XCTAssert(t5 is SimpleSymbolToken && t5.string == ",")
+            XCTAssert(t5 is SimpleNewlineToken && t5.string == "\n")
             let t6 = try st.getToken()
-            XCTAssert(t6 is SimpleIdentifierToken && t6.string == "s")
+            XCTAssert(t6 is SimpleIdentifierToken && t6.string == "if")
             let t7 = try st.getToken()
-            XCTAssert(t7 is SimpleSymbolToken && t7.string == "=")
+            XCTAssert(t7 is SimpleIdentifierToken && t7.string == "x")
             let t8 = try st.getToken()
-            XCTAssert(t8 is SimpleStringLiteralToken && t8.string == "''")
+            XCTAssert(t8 is SimpleOperatorToken && t8.string == "==")
+            let t9 = try st.getToken()
+            XCTAssert(t9 is SimpleNumericLiteralToken && t9.string == "0")
+            let t10 = try st.getToken()
+            XCTAssert(t10 is SimpleSymbolToken && t10.string == "{")
+            let t11 = try st.getToken()
+            XCTAssert(t11 is SimpleIdentifierToken && t11.string == "print")
+            let t12 = try st.getToken()
+            XCTAssert(t12 is SimpleSymbolToken && t12.string == "(")
+            let t13 = try st.getToken()
+            XCTAssert(t13 is SimpleStringLiteralToken && t13.string == "''")
+            let t14 = try st.getToken()
+            XCTAssert(t14 is SimpleSymbolToken && t14.string == ")")
+            let t15 = try st.getToken()
+            XCTAssert(t15 is SimpleSymbolToken && t15.string == "}")
+            let t16 = try st.getToken()
+            XCTAssert(t16 is EndToken)
         } catch let error as TokenizerError {
             print(error)
             XCTFail()
@@ -420,11 +437,15 @@ class SwiftParsingEngineTests: XCTestCase {
     }
     
     func testParser2() {
-        let testedString = "if x == 0 {print(x)}"
-        let st = SimpleTokenizer(string: testedString)
+        let st = SimpleTokenizer(string: simpleTestedString)
         let parser = SimpleParser(tokenizer: st)
-        var state = parser.state
-        parser.parse(SimpleStatement)
+        if let node = parser.parse(SimpleScript) as? SimpleScriptNode {
+            for childNode in node.childNodes {
+                print(childNode)
+            }
+        } else {
+            XCTFail()
+        }
     }
     
     func testPerformanceExample() {

@@ -54,7 +54,7 @@ class SimpleTokenizer: TokenizerBase<SimpleContext> {
             ("\\h*('(?:[^'\\\\]|\\\\'|\\\\\\\\)*'|\"(?:[^\"\\\\]|\\\\\"|\\\\\\\\)*\")", {SimpleStringLiteralToken($0)}),
             ("\\h*(--|\\+\\+|<<|>>|>>>|==|!=|>=|<=|===|!==|\\?\\?|\\+=|-=|\\*=|/=|"
                 + "^=|&=|\\|=|&&|\\|\\||&&=|\\|\\|=|\\?\\?=)", {SimpleOperatorToken($0)}),
-            ("\\h*//.*(\n\r|\n|\r)", {SimpleNewlineToken($0)}),
+            ("\\h*(?://.*)?(\n\r|\n|\r)", {SimpleNewlineToken($0)}),
             ("\\h*([^_$0-9a-zA-Z'\"\n\r])", {SimpleSymbolToken($0)}),
             ].map{TM($0,SimpleContext.Initial,$1)}
     }

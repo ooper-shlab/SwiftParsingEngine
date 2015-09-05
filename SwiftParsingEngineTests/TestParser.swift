@@ -28,7 +28,7 @@ class NonTerminal: NonTerminalBase<LexicalContext, ParsingState> {
     }
 }
 
-class Terminal: TerminalBase<LexicalContext, ParsingState> {
+class Terminal: TerminalBase {
     var predicate: String->Bool
     override init(_ type: Token.Type) {
         self.predicate = {_ in true}

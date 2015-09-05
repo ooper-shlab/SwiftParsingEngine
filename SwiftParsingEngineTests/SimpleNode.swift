@@ -12,7 +12,10 @@ import SwiftParsingEngine
 class SimpleNode: NodeBase {
 }
 
-class SimpleScriptNode: SimpleNode {}
+class SimpleScriptNode: SimpleNode {
+    ///SimpleStatementNode or SimpleDeclarationNode
+    var childNodes:[NodeBase] = []
+}
 
 class SimpleStatementNode: SimpleNode {}
 class SimpleDeclarationNode: SimpleNode {}

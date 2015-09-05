@@ -10,55 +10,62 @@ import Foundation
 
 public class SyntaxMatch<C: LexicalContextType, S: ParsingStateType
 where C.Element == C, S.ContextType == C> {
-    public var pattern: PatternBase<C, S>
+    public var pattern: PatternBase
     public var nodes: [NodeBase]
     ///Parsing state after the match
     public var state: S
-    init(pattern: PatternBase<C, S>, nodes: [NodeBase], state: S) {
+    init(pattern: PatternBase, nodes: [NodeBase], state: S) {
         self.pattern = pattern
         self.nodes = nodes
         self.state = state
     }
 }
 
-public class PatternBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: Token {
-    init(_ string: String) {
-        super.init(string, NSRange())
+public class PatternBase {
+    public var string: String
+    public init(_ string: String) {
+        self.string = string
+    }
+    public init() {
+        self.string = String(self.dynamicType)
     }
     
-    public var opt: OptPattern<C,S> {
-        return OptPattern(pattern: self)
-    }
-    func or(pattern: PatternBase<C,S>)->AnyPattern<C,S> {
-        if let anyPattern = pattern as? AnyPattern<C,S> {
+    //MARK: extensions to use Token as Pattern
+    func or(pattern: PatternBase)->AnyPattern {
+        if let anyPattern = pattern as? AnyPattern {
             return AnyPattern([self] + anyPattern.patterns)
         } else {
             return AnyPattern([self, pattern])
         }
     }
-    func concat(pattern: PatternBase<C,S>)->SequencePattern<C,S> {
-        if let seqPattern = pattern as? SequencePattern<C,S> {
+    
+    func concat(pattern: PatternBase)->SequencePattern {
+        if let seqPattern = pattern as? SequencePattern {
             return SequencePattern([self] + seqPattern.patterns)
         } else {
             return SequencePattern([self, pattern])
         }
     }
     
-    func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
-        fatalError("Abstract method \(__FUNCTION__) not implemented")
+    func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+            fatalError("Abstract method \(__FUNCTION__) not implemented")
+    }
+    
+    public var opt: OptPattern {
+        return OptPattern(pattern: self)
     }
 }
 
-public class OptPattern<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
-    var basePattern: PatternBase<C,S>
-    init(pattern: PatternBase<C,S>) {
+public class OptPattern: PatternBase {
+    var basePattern: PatternBase
+    init(pattern: PatternBase) {
         self.basePattern = pattern
-        super.init("")
+        super.init()
     }
     
-    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         result += basePattern.match(parser)
@@ -68,22 +75,22 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
     }
 }
 
-public class AnyPattern<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
-    var patterns: [PatternBase<C,S>]
-    init(_ patterns: [PatternBase<C,S>]) {
+public class AnyPattern: PatternBase {
+    var patterns: [PatternBase]
+    init(_ patterns: [PatternBase]) {
         self.patterns = patterns
-        super.init("")
+        super.init()
     }
-    override func or(pattern: PatternBase<C,S>)->AnyPattern<C,S> {
-        if let anyPattern = pattern as? AnyPattern<C,S> {
+    override func or(pattern: PatternBase)->AnyPattern {
+        if let anyPattern = pattern as? AnyPattern {
             return AnyPattern(self.patterns + anyPattern.patterns)
         } else {
             return AnyPattern(self.patterns + [pattern])
         }
     }
     
-    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         for pattern in patterns {
@@ -95,25 +102,19 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
 }
 
 public class NonTerminalBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
+where C.Element == C, S.ContextType == C>: PatternBase {
     public typealias NodeConstructorType = SyntaxMatch<C,S> -> NodeBase
     
-    var nodeConstructor: NodeConstructorType?
+    public var nodeConstructor: NodeConstructorType?
     ///
-    var pattern: PatternBase<C,S>? = nil
-//    //???
-//    var nodeType: NodeBase.Type
-//    
-//    public init(_ nodeType: NodeBase.Type) {
-//        self.nodeType = nodeType
-//        super.init(NSStringFromClass(nodeType))
-//    }
+    var pattern: PatternBase? = nil
+
     public init(nodeConstructor: NodeConstructorType) {
         self.nodeConstructor = nodeConstructor
-        super.init(String(nodeConstructor))
+        super.init()
     }
     
-    func addPattern(pattern: PatternBase<C,S>) {
+    func addPattern(pattern: PatternBase) {
         self.pattern = self.pattern?.or(pattern) ?? pattern
     }
     
@@ -129,22 +130,26 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
     }
 }
 
-public class TerminalBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
+public class TerminalBase: PatternBase {
     var type: Token.Type? = nil
     public init(_ type: Token.Type) {
         self.type = type
-        super.init("")
+        super.init()
     }
     
-    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         do {
             let token = try parser.tokenizer.getToken()
+            //print("matching \(token.string.debugDescription) to \(self.type!)")
             if token.dynamicType == self.type {
                 let nodes: [NodeBase] = [TerminalNode(token: token)]
                 result = [SyntaxMatch(pattern: self, nodes: nodes, state: parser.state)]
+                //print("-->succeeded")
+            } else {
+                //print("-->failed")
             }
         } catch _  {
             fatalError()
@@ -154,8 +159,7 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
     }
 }
 
-public class Symbol<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S>, StringLiteralConvertible {
+public class Symbol: PatternBase, StringLiteralConvertible {
     override init(_ string: String) {
         super.init(string)
     }
@@ -169,7 +173,8 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S>, StringLiteralConver
         super.init(value)
     }
     
-    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         do {
@@ -186,8 +191,7 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S>, StringLiteralConver
     }
 }
 
-public class AnySymbol<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
+public class AnySymbol: PatternBase {
     var strings: Set<String>
     
     public init(_ strings: String...) {
@@ -196,7 +200,8 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
         super.init(strings.first!)
     }
     
-    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         do {
@@ -214,7 +219,7 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
 }
 
 class ToStateBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>:  PatternBase<C,S> {
+where C.Element == C, S.ContextType == C>:  PatternBase {
     var context: C
     init(_ context: C) {
         self.context = context
@@ -230,22 +235,22 @@ where C.Element == C, S.ContextType == C>:  PatternBase<C,S> {
     }
 }
 
-public class SequencePattern<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
-    var patterns: [PatternBase<C,S>]
-    init(_ patterns: [PatternBase<C,S>]) {
+public class SequencePattern: PatternBase {
+    var patterns: [PatternBase]
+    init(_ patterns: [PatternBase]) {
         self.patterns = patterns
         super.init("")
     }
-    override func concat(pattern: PatternBase<C,S>)->SequencePattern<C,S> {
-        if let seqPattern = pattern as? SequencePattern<C,S> {
+    override func concat(pattern: PatternBase)->SequencePattern {
+        if let seqPattern = pattern as? SequencePattern {
             return SequencePattern(self.patterns + seqPattern.patterns)
         } else {
             return SequencePattern(self.patterns + [pattern])
         }
     }
     
-    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = [SyntaxMatch(pattern: self, nodes: [], state: savedState)]
         for pattern in patterns {
@@ -266,21 +271,21 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
     }
 }
 
-public class RepeatPattern<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
-    var pattern: PatternBase<C,S>
+public class RepeatPattern: PatternBase {
+    var pattern: PatternBase
     var minCount: Int = 0
-    init(_ pattern: PatternBase<C,S>) {
+    init(_ pattern: PatternBase) {
         self.pattern = pattern
         super.init("")
     }
-    init(_ pattern: PatternBase<C,S>, minCount: Int) {
+    init(_ pattern: PatternBase, minCount: Int) {
         self.pattern = pattern
         self.minCount = minCount
         super.init("")
     }
     
-    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var lastMatches: [SyntaxMatch<C,S>] = [SyntaxMatch(pattern: self, nodes: [], state: savedState)]
         var result: [SyntaxMatch<C,S>] = []
@@ -310,42 +315,35 @@ where C.Element == C, S.ContextType == C>: PatternBase<C,S> {
 
 infix operator |=> {precedence 90}
 public func |=> <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(lhs: NonTerminalBase<C,S>, rhs: PatternBase<C,S>) {
+    where C.Element == C, S.ContextType == C>(lhs: NonTerminalBase<C,S>, rhs: PatternBase) {
     lhs.addPattern(rhs)
 }
-public func | <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(lhs: PatternBase<C,S>, rhs: PatternBase<C,S>)->AnyPattern<C,S> {
+public func | (lhs: PatternBase, rhs: PatternBase)->AnyPattern {
     return lhs.or(rhs)
 }
-infix operator ~ {}
-public func & <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(lhs: Symbol<C,S>, rhs: Symbol<C,S>)->SequencePattern<C,S> {
+
+public func & (lhs: Symbol, rhs: Symbol)->SequencePattern {
     return lhs.concat(rhs)
 }
-public func & <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(lhs: PatternBase<C,S>, rhs: Symbol<C,S>)->SequencePattern<C,S> {
+public func & (lhs: PatternBase, rhs: Symbol)->SequencePattern {
     return lhs.concat(rhs)
 }
-public func & <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(lhs: Symbol<C,S>, rhs: PatternBase<C,S>)->SequencePattern<C,S> {
+public func & (lhs: Symbol, rhs: PatternBase)->SequencePattern {
     return lhs.concat(rhs)
 }
-public func & <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(lhs: PatternBase<C,S>, rhs: PatternBase<C,S>)->SequencePattern<C,S> {
+public func & (lhs: PatternBase, rhs: PatternBase)->SequencePattern {
     return lhs.concat(rhs)
 }
 
 postfix operator + {}
 postfix operator * {}
 
-public postfix func + <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(pattern: PatternBase<C,S>) -> RepeatPattern<C,S> {
-    return RepeatPattern<C,S>(pattern, minCount: 1)
+public postfix func + (pattern: PatternBase) -> RepeatPattern {
+    return RepeatPattern(pattern, minCount: 1)
 }
 
-public postfix func * <C: LexicalContextType, S: ParsingStateType
-    where C.Element == C, S.ContextType == C>(pattern: PatternBase<C,S>) -> RepeatPattern<C,S> {
-    return RepeatPattern<C,S>(pattern)
+public postfix func * (pattern: PatternBase) -> RepeatPattern {
+    return RepeatPattern(pattern)
 }
 
 public protocol ParsingStateType {
@@ -364,16 +362,17 @@ where C.Element == C, S.ContextType == C> {
     public init(tokenizer: TokenizerBase<C>) {
         self.tokenizer = tokenizer
         self.setup()
+        //TODO: current parsing is too slow, needs compilation & optimization here...
     }
     
     public func parse(nt: NonTerminalBase<C,S>) -> NodeBase? {
-        assert(nt.pattern != nil)
+        assert(nt.pattern != nil && nt.nodeConstructor != nil)
         let matches = nt.pattern!.match(self)
-        if matches.count > 1 {
+        if matches.count > 0 {
             //First match only, as for now
-            return matches.first?.nodes.first
+            return nt.nodeConstructor!(matches.first!)
         } else {
-            return matches.first?.nodes.first
+            return nil
         }
     }
 }

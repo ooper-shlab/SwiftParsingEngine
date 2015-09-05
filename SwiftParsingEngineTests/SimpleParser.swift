@@ -29,25 +29,12 @@ class SimpleNonTerminal: NonTerminalBase<SimpleContext, SimpleState> {
     }
 }
 
-class SimpleTerminal: TerminalBase<SimpleContext, SimpleState> {
-    var predicate: String->Bool
-    override init(_ type: Token.Type) {
-        self.predicate = {_ in true}
-        super.init(type)
-    }
-    init(_ type: Token.Type, _ predicate: String->Bool) {
-        self.predicate = predicate
-        super.init(type)
-    }
-    convenience init(_ type: Token.Type, _ names: String...) {
-        let nameSet = Set(names)
-        self.init(type) {nameSet.contains($0)}
-    }
-}
-
-
 //MARK: Non terminal symbols
-let SimpleScript = SimpleNonTerminal{_ in SimpleScriptNode()}
+let SimpleScript = SimpleNonTerminal{match in
+    let node = SimpleScriptNode()
+    node.childNodes = match.nodes
+    return node
+}
 let SimpleStatement = SimpleNonTerminal{_ in SimpleStatementNode()}
 let SimpleExpression = SimpleNonTerminal{_ in SimpleExpressionNode()}
 let SimpleDeclaration = SimpleNonTerminal{_ in SimpleDeclarationNode()}
@@ -68,18 +55,21 @@ let SimpleParameter = SimpleNonTerminal{_ in SimpleParameterNode()}
 let SimpleFactor = SimpleNonTerminal{_ in SimpleFactorNode()}
 let SimpleConstant = SimpleNonTerminal{_ in SimpleConstantNode()}
 
-let SimpleVariable = SimpleTerminal(SimpleIdentifierToken)
-let SimpleStringConstant = SimpleTerminal(SimpleStringLiteralToken)
-let SimpleNumericConstant = SimpleTerminal(SimpleNumericLiteralToken)
-let SimpleAssignmentOperator = AnySymbol<SimpleContext, SimpleState>("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
-let SimpleDisjunctionOperator = AnySymbol<SimpleContext, SimpleState>("||", "??")
-let SimpleConjunctionOperator = AnySymbol<SimpleContext, SimpleState>("&&")
-let SimpleComparativeOperator = AnySymbol<SimpleContext, SimpleState>("<", "<=", ">", ">=", "==", "!=", "===", "!==")
-let SimpleAdditionalOperator = AnySymbol<SimpleContext, SimpleState>("+", "-", "|", "^")
-let SimpleMultiplicationOperator = AnySymbol<SimpleContext, SimpleState>("*", "/", "&", "<<", ">>", ">>>")
-let SimplePrefixOperator = AnySymbol<SimpleContext, SimpleState>("+", "-", "!", "~")
-
 let SimpleBlock = SimpleNonTerminal{_ in SimpleBlockNode()}
+
+//MARK: Terminal symbols
+let SimpleVariable = Terminal(SimpleIdentifierToken)
+let SimpleStringConstant = Terminal(SimpleStringLiteralToken)
+let SimpleNumericConstant = Terminal(SimpleNumericLiteralToken)
+let SimpleEnd = Terminal(EndToken)
+let SN = Terminal(SimpleNewlineToken)
+let SimpleAssignmentOperator = AnySymbol("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
+let SimpleDisjunctionOperator = AnySymbol("||", "??")
+let SimpleConjunctionOperator = AnySymbol("&&")
+let SimpleComparativeOperator = AnySymbol("<", "<=", ">", ">=", "==", "!=", "===", "!==")
+let SimpleAdditionalOperator = AnySymbol("+", "-", "|", "^")
+let SimpleMultiplicationOperator = AnySymbol("*", "/", "&", "<<", ">>", ">>>")
+let SimplePrefixOperator = AnySymbol("+", "-", "!", "~")
 
 class SimpleParser: ParserBase<SimpleContext, SimpleState> {
     var _state: SimpleState = SimpleState()
@@ -96,18 +86,20 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         }
     }
     override func setup() {
-        SimpleScript |=> (SimpleStatement | SimpleDeclaration)*
+        SimpleScript |=> (SN* & (SimpleStatement | SimpleDeclaration))* & SN* & SimpleEnd
         
         SimpleStatement |=> SimpleExpression
         SimpleStatement |=> SimpleExpression & ";"
         SimpleStatement |=> SimpleWhileStatement
         
+        SimpleDeclaration |=> "var" & SimpleVariable & "=" & SimpleExpression
+        
         SimpleExpression |=> SimpleDisjunction
-        SimpleExpression |=> SimpleVariable & SimpleAssignmentOperator & SimpleDisjunction
+        SimpleExpression |=> SimpleFuncall & SimpleAssignmentOperator & SimpleDisjunction
         
         SimpleDisjunction |=> SimpleConjunction & (SimpleDisjunctionOperator & SimpleConjunction)*
         
-        SimpleConjunction |=> SimpleComparative & SimpleConjunctionOperator & SimpleComparative
+        SimpleConjunction |=> SimpleComparative & (SimpleConjunctionOperator & SimpleComparative)*
         
         SimpleComparative |=> SimpleAddition & (SimpleComparativeOperator & SimpleAddition)*
         
