@@ -23,8 +23,8 @@ struct ParsingState: ParsingStateType {
 }
 
 class NonTerminal: NonTerminalBase<LexicalContext, ParsingState> {
-    override init(_ nodeType: NodeBase.Type) {
-        super.init(nodeType)
+    override init(nodeConstructor: NodeConstructorType) {
+        super.init(nodeConstructor :nodeConstructor)
     }
 }
 
@@ -45,15 +45,15 @@ class Terminal: TerminalBase<LexicalContext, ParsingState> {
 }
 
 //MARK: Non terminal symbols
-let Template = NonTerminal(RootNode)
-let Statement = NonTerminal(StatementNode)
-let Block = NonTerminal(BlockNode)
-let Expression = NonTerminal(ExpressionNode)
-let PrefixExpression = NonTerminal(PrefixExpressionNode)
-let BinaryExpression = NonTerminal(BinaryExpressionNode)
-let IfStatement = NonTerminal(IfStatementNode)
-let ForStatement = NonTerminal(ForStatementNode)
-let HTMLOutputStatement = NonTerminal(HTMLOutputNode)
+let Template = NonTerminal{_ in RootNode()}
+let Statement = NonTerminal{_ in StatementNode()}
+let Block = NonTerminal{_ in BlockNode()}
+let Expression = NonTerminal{_ in ExpressionNode()}
+let PrefixExpression = NonTerminal{_ in PrefixExpressionNode()}
+let BinaryExpression = NonTerminal{_ in BinaryExpressionNode()}
+let IfStatement = NonTerminal{_ in IfStatementNode()}
+let ForStatement = NonTerminal{_ in ForStatementNode()}
+let HTMLOutputStatement = NonTerminal{match in HTMLOutputNode.createNode(match.nodes)}
 
 //MARK: Terminal symbols
 let PrefixOperator = Terminal(OperatorToken.self, "&", "+", "-", "!", "~")

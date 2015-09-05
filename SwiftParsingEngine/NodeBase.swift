@@ -9,13 +9,7 @@
 import Foundation
 
 public class NodeBase {
-    
-    public class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError("Abstract method \(__FUNCTION__) not implemented")
-    }
-    
     public init() {}
-    
 }
 
 public class TerminalNode: NodeBase {

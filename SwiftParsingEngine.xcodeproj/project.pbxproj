@@ -17,6 +17,8 @@
 		D72B97D31B92A94B002BA5B2 /* TestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D01B92A94B002BA5B2 /* TestParser.swift */; settings = {ASSET_TAGS = (); }; };
 		D72B97D41B92A94B002BA5B2 /* TestTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D11B92A94B002BA5B2 /* TestTokenizer.swift */; settings = {ASSET_TAGS = (); }; };
 		D72B97DA1B95C355002BA5B2 /* SimpleTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D91B95C355002BA5B2 /* SimpleTokenizer.swift */; settings = {ASSET_TAGS = (); }; };
+		D72B98131B986FDE002BA5B2 /* SimpleParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B98121B986FDE002BA5B2 /* SimpleParser.swift */; settings = {ASSET_TAGS = (); }; };
+		D72B98151B986FEC002BA5B2 /* SimpleNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B98141B986FEC002BA5B2 /* SimpleNode.swift */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +47,8 @@
 		D72B97D51B933928002BA5B2 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		D72B97D61B933928002BA5B2 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		D72B97D91B95C355002BA5B2 /* SimpleTokenizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleTokenizer.swift; sourceTree = "<group>"; };
+		D72B98121B986FDE002BA5B2 /* SimpleParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleParser.swift; sourceTree = "<group>"; };
+		D72B98141B986FEC002BA5B2 /* SimpleNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleNode.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +111,8 @@
 				D72B97BC1B92A87B002BA5B2 /* SwiftParsingEngineTests.swift */,
 				D72B97BE1B92A87B002BA5B2 /* Info.plist */,
 				D72B97D91B95C355002BA5B2 /* SimpleTokenizer.swift */,
+				D72B98121B986FDE002BA5B2 /* SimpleParser.swift */,
+				D72B98141B986FEC002BA5B2 /* SimpleNode.swift */,
 			);
 			path = SwiftParsingEngineTests;
 			sourceTree = "<group>";
@@ -231,9 +237,11 @@
 			files = (
 				D72B97BD1B92A87B002BA5B2 /* SwiftParsingEngineTests.swift in Sources */,
 				D72B97D41B92A94B002BA5B2 /* TestTokenizer.swift in Sources */,
+				D72B98131B986FDE002BA5B2 /* SimpleParser.swift in Sources */,
 				D72B97DA1B95C355002BA5B2 /* SimpleTokenizer.swift in Sources */,
 				D72B97D21B92A94B002BA5B2 /* TestNode.swift in Sources */,
 				D72B97D31B92A94B002BA5B2 /* TestParser.swift in Sources */,
+				D72B98151B986FEC002BA5B2 /* SimpleNode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

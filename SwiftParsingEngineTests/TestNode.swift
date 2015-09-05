@@ -9,57 +9,25 @@
 import Foundation
 import SwiftParsingEngine
 
-class RootNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class RootNode: NodeBase {}
 
-class StatementNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class StatementNode: NodeBase {}
 
-class BlockNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class BlockNode: NodeBase {}
 
-class ExpressionNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class ExpressionNode: NodeBase {}
 
-class PrefixExpressionNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class PrefixExpressionNode: NodeBase {}
 
-class BinaryExpressionNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class BinaryExpressionNode: NodeBase {}
 
-class ForStatementNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class ForStatementNode: NodeBase {}
 
-class IfStatementNode: NodeBase {
-    override class func createNode(childNodes: [NodeBase]) -> Self {
-        fatalError()
-    }
-}
+class IfStatementNode: NodeBase {}
 
 class HTMLOutputNode: NodeBase {
     var text: String = ""
-    override class func createNode(childNodes: [NodeBase]) -> HTMLOutputNode {
+    class func createNode(childNodes: [NodeBase]) -> HTMLOutputNode {
         var text = ""
         for node in childNodes {
             switch node {

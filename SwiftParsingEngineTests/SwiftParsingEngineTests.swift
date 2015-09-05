@@ -419,6 +419,14 @@ class SwiftParsingEngineTests: XCTestCase {
         }
     }
     
+    func testParser2() {
+        let testedString = "if x == 0 {print(x)}"
+        let st = SimpleTokenizer(string: testedString)
+        let parser = SimpleParser(tokenizer: st)
+        var state = parser.state
+        parser.parse(SimpleStatement)
+    }
+    
     func testPerformanceExample() {
         // This is an example of a performance test case.
         self.measureBlock {
