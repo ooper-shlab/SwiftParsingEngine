@@ -18,7 +18,7 @@ import SwiftParsingEngine
     In the tokenizer category, you declare three kinds of types.
 
     Type 1. Token classes
-    Type 2. LecicalState type
+    Type 2. LecicalContext type
     Type 3. Tokenizer class
 
  * ---------------------------------------------------------------------------------------- */
@@ -50,16 +50,17 @@ extension SimpleContext: Hashable {
 //MARK: Type 3. Tokenizer class
 //
 class SimpleTokenizer: TokenizerBase<SimpleContext> {
+    private static var _matchers: [TM] = [
+        ("\\h*([_$a-zA-Z][_$a-zA-Z0-9]*)", {SimpleIdentifierToken($0)}),
+        ("\\h*([-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?)", {SimpleNumericLiteralToken($0)}),
+        ("\\h*('(?:[^'\\\\]|\\\\'|\\\\\\\\)*'|\"(?:[^\"\\\\]|\\\\\"|\\\\\\\\)*\")", {SimpleStringLiteralToken($0)}),
+        ("\\h*(--|\\+\\+|<<|>>|>>>|==|!=|>=|<=|===|!==|\\?\\?|\\+=|-=|\\*=|/=|"
+            + "^=|&=|\\|=|&&|\\|\\||&&=|\\|\\|=|\\?\\?=|<<=|>>=|>>>=)", {SimpleOperatorToken($0)}),
+        ("\\h*(?://.*)?(\n\r|\n|\r)", {SimpleNewlineToken($0)}),
+        ("\\h*([^_$0-9a-zA-Z'\"\n\r])", {SimpleSymbolToken($0)}),
+        ].map{TM($0,SimpleContext.Initial,$1)}
     override var matchers: [TM] {
-        return [
-            ("\\h*([_$a-zA-Z][_$a-zA-Z0-9]*)", {SimpleIdentifierToken($0)}),
-            ("\\h*([-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?)", {SimpleNumericLiteralToken($0)}),
-            ("\\h*('(?:[^'\\\\]|\\\\'|\\\\\\\\)*'|\"(?:[^\"\\\\]|\\\\\"|\\\\\\\\)*\")", {SimpleStringLiteralToken($0)}),
-            ("\\h*(--|\\+\\+|<<|>>|>>>|==|!=|>=|<=|===|!==|\\?\\?|\\+=|-=|\\*=|/=|"
-                + "^=|&=|\\|=|&&|\\|\\||&&=|\\|\\|=|\\?\\?=)", {SimpleOperatorToken($0)}),
-            ("\\h*(?://.*)?(\n\r|\n|\r)", {SimpleNewlineToken($0)}),
-            ("\\h*([^_$0-9a-zA-Z'\"\n\r])", {SimpleSymbolToken($0)}),
-            ].map{TM($0,SimpleContext.Initial,$1)}
+        return SimpleTokenizer._matchers
     }
     override init(string: String?) {
         super.init(string: string)

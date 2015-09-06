@@ -28,22 +28,6 @@ class NonTerminal: NonTerminalBase<LexicalContext, ParsingState> {
     }
 }
 
-class Terminal: TerminalBase {
-    var predicate: String->Bool
-    override init(_ type: Token.Type) {
-        self.predicate = {_ in true}
-        super.init(type)
-    }
-    init(_ type: Token.Type, _ predicate: String->Bool) {
-        self.predicate = predicate
-        super.init(type)
-    }
-    convenience init(_ type: Token.Type, _ names: String...) {
-        let nameSet = Set(names)
-        self.init(type) {nameSet.contains($0)}
-    }
-}
-
 //MARK: Non terminal symbols
 let Template = NonTerminal{_ in RootNode()}
 let Statement = NonTerminal{_ in StatementNode()}

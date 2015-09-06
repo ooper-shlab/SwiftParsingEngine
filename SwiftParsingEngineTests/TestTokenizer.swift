@@ -113,15 +113,15 @@ struct LexicalContext: LexicalContextType {
 extension LexicalContext: Hashable {
     var hashValue: Int {return rawValue}
 }
+let TAG_NAME = "[_:\\p{L}][-._:\\p{L}\\p{Nd}\\p{Mn}]*"
+let OP_CHARS = "[-/=+!*%<>&|^?~]"
 class Tokenizer: TokenizerBase<LexicalContext> {
     override init(string: String?) {
         super.init(string: string)
     }
     
-    let TAG_NAME = "[_:\\p{L}][-._:\\p{L}\\p{Nd}\\p{Mn}]*"
-    let OP_CHARS = "[-/=+!*%<>&|^?~]"
-    override var matchers: [TM] {
-        return [
+    private static var _matchers: [TM] = {
+        let templates: [(String, LexicalContext, TM.TokenizingProc)] = [
             ("((?:[^`]|``)+)", .HTML, {HTMLTextToken($0)}),
             ("((?:[^`*]|``|\\*[^>])+)", .Comment, {HTMLTextToken($0)}),
             ("((?:[^`\r\n\\}]|``)+)", .Inline, {HTMLTextToken($0)}),
@@ -160,6 +160,10 @@ class Tokenizer: TokenizerBase<LexicalContext> {
             
             ("(\\.+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
             ("("+OP_CHARS+"+)", [.Expression,.Block], {OperatorToken.createInstance($0)}),
-            ].map(TM.init)
+        ]
+        return templates.map(TM.init)
+    }()
+    override var matchers: [TM] {
+        return Tokenizer._matchers
     }
 }

@@ -48,7 +48,7 @@ public class Token {
 public class EndToken: Token {}
 
 
-public protocol LexicalContextType: OptionSetType {
+public protocol LexicalContextType: OptionSetType, Hashable {
     static var Initial: Self {get}
 }
 
@@ -75,6 +75,9 @@ public class TokenizerBase<C: LexicalContextType where C.Element == C, C: Hashab
     public var currentPosition: Int = 0
     
     private var string: String
+    
+    var cachedToken: [C: [Int: Token]] = [:]
+    
     public typealias TM = TokenMatcher<C>
     public var matchers: [TM] {
         fatalError("Abstract method \(__FUNCTION__) not implemented")
@@ -88,9 +91,13 @@ public class TokenizerBase<C: LexicalContextType where C.Element == C, C: Hashab
         self.string = string
         currentContext = .Initial
         currentPosition = 0
+        cachedToken = [:]
+    }
+    public func reset() {
+        currentContext = .Initial
+        currentPosition = 0
     }
     
-    var cachedToken: [C: [Int: Token]] = [:]
     public func getToken() throws -> Token {
         if let cache = cachedToken[currentContext] {
             if let token = cache[currentPosition] {

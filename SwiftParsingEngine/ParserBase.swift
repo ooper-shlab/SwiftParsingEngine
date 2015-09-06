@@ -130,11 +130,23 @@ where C.Element == C, S.ContextType == C, C: Hashable>: PatternBase {
     }
 }
 
-public class TerminalBase: PatternBase {
+public class Terminal: PatternBase {
     var type: Token.Type? = nil
+    var predicate: String->Bool
+    
     public init(_ type: Token.Type) {
         self.type = type
+        self.predicate = {_ in true}
         super.init()
+    }
+    init(_ type: Token.Type, _ predicate: String->Bool) {
+        self.type = type
+        self.predicate = predicate
+        super.init()
+    }
+    public convenience init(_ type: Token.Type, _ names: String...) {
+        let nameSet = Set(names)
+        self.init(type) {nameSet.contains($0)}
     }
     
     override func match<C: LexicalContextType, S: ParsingStateType
@@ -236,11 +248,14 @@ where C.Element == C, S.ContextType == C, C: Hashable>:  PatternBase {
 }
 
 public class SequencePattern: PatternBase {
+    
     var patterns: [PatternBase]
+    
     init(_ patterns: [PatternBase]) {
         self.patterns = patterns
         super.init("")
     }
+    
     override func concat(pattern: PatternBase)->SequencePattern {
         if let seqPattern = pattern as? SequencePattern {
             return SequencePattern(self.patterns + seqPattern.patterns)
@@ -313,6 +328,12 @@ public class RepeatPattern: PatternBase {
     }
 }
 
+infix operator ==> {precedence 90}
+public func ==> <C: LexicalContextType, S: ParsingStateType
+    where C.Element == C, S.ContextType == C>(lhs: NonTerminalBase<C,S>, rhs: PatternBase) {
+        lhs.pattern = rhs
+}
+
 infix operator |=> {precedence 90}
 public func |=> <C: LexicalContextType, S: ParsingStateType
     where C.Element == C, S.ContextType == C>(lhs: NonTerminalBase<C,S>, rhs: PatternBase) {
@@ -361,8 +382,14 @@ where C.Element == C, S.ContextType == C, C: Hashable> {
     
     public init(tokenizer: TokenizerBase<C>) {
         self.tokenizer = tokenizer
+        tokenizer.reset()
         self.setup()
         //TODO: current parsing is too slow, needs compilation & optimization here...
+    }
+    
+    public func reset() {
+        tokenizer.reset()
+        state = S()
     }
     
     public func parse(nt: NonTerminalBase<C,S>) -> NodeBase? {

@@ -9,17 +9,26 @@
 import Foundation
 import SwiftParsingEngine
 
+/* ---------------------------------------------------------------------------------------- *
+    [Parser]
+
+    In the parser category, you declare three kinds of types,
+    and two types of Pattern type instances.
+
+    Type 1. ParsingState type
+    Type 2. Pattern classes
+    Instances 1. NonTerminal patterns
+    Instances 2. Terminal patters
+    Type 3. Parser class
+
+* ---------------------------------------------------------------------------------------- */
 
 struct SimpleState: ParsingStateType {
     var context: SimpleContext
-    var contextStack: [SimpleContext] = []
     var currentPosition: Int
-    var tagName: String
     init() {
         context = SimpleContext.Initial
-        contextStack = []
         currentPosition = 0
-        tagName = String()
     }
 }
 
@@ -32,7 +41,7 @@ class SimpleNonTerminal: NonTerminalBase<SimpleContext, SimpleState> {
 //MARK: Non terminal symbols
 let SimpleScript = SimpleNonTerminal{match in
     let node = SimpleScriptNode()
-    node.childNodes = match.nodes
+    node.childNodes = match.nodes.filter{$0 is SimpleNode}
     return node
 }
 let SimpleStatement = SimpleNonTerminal{_ in SimpleStatementNode()}
@@ -86,45 +95,45 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         }
     }
     override func setup() {
-        SimpleScript |=> (SN* & (SimpleStatement | SimpleDeclaration))* & SN* & SimpleEnd
+        SimpleScript ==> (SN* & (SimpleStatement | SimpleDeclaration))* & SN* & SimpleEnd
         
-        SimpleStatement |=> SimpleExpression
+        SimpleStatement ==> SimpleExpression
         SimpleStatement |=> SimpleExpression & ";"
         SimpleStatement |=> SimpleWhileStatement
         
-        SimpleDeclaration |=> "var" & SimpleVariable & "=" & SimpleExpression
+        SimpleDeclaration ==> "var" & SimpleVariable & "=" & SimpleExpression
         
-        SimpleExpression |=> SimpleDisjunction
+        SimpleExpression ==> SimpleDisjunction
         SimpleExpression |=> SimpleFuncall & SimpleAssignmentOperator & SimpleDisjunction
         
-        SimpleDisjunction |=> SimpleConjunction & (SimpleDisjunctionOperator & SimpleConjunction)*
+        SimpleDisjunction ==> SimpleConjunction & (SimpleDisjunctionOperator & SimpleConjunction)*
         
-        SimpleConjunction |=> SimpleComparative & (SimpleConjunctionOperator & SimpleComparative)*
+        SimpleConjunction ==> SimpleComparative & (SimpleConjunctionOperator & SimpleComparative)*
         
-        SimpleComparative |=> SimpleAddition & (SimpleComparativeOperator & SimpleAddition)*
+        SimpleComparative ==> SimpleAddition & (SimpleComparativeOperator & SimpleAddition)*
         
-        SimpleAddition |=> SimpleTerm & (SimpleAdditionalOperator & SimpleTerm)*
+        SimpleAddition ==> SimpleTerm & (SimpleAdditionalOperator & SimpleTerm)*
         
-        SimpleTerm |=> SimplePrefix & (SimpleMultiplicationOperator & SimplePrefix)*
+        SimpleTerm ==> SimplePrefix & (SimpleMultiplicationOperator & SimplePrefix)*
         
-        SimplePrefix |=> SimplePrefixOperator.opt & SimpleFuncall
+        SimplePrefix ==> SimplePrefixOperator.opt & SimpleFuncall
         
-        SimpleFuncall |=> SimpleFactor & (SimpleParameter)*
+        SimpleFuncall ==> SimpleFactor & (SimpleParameter)*
         SimpleFuncall |=> SimpleIfStatement
         
-        SimpleParameter |=> "(" & SimpleExpression & ")"
+        SimpleParameter ==> "(" & SimpleExpression & ")"
         SimpleParameter |=> "." & SimpleVariable
         
-        SimpleFactor |=> "(" & SimpleExpression & ")"
+        SimpleFactor ==> "(" & SimpleExpression & ")"
         SimpleFactor |=> SimpleVariable
         SimpleFactor |=> SimpleConstant
         
-        SimpleConstant |=> SimpleNumericConstant | SimpleStringConstant
+        SimpleConstant ==> SimpleNumericConstant | SimpleStringConstant
         
-        SimpleBlock |=> "{" & SimpleStatement* & "}"
+        SimpleBlock ==> "{" & SimpleStatement* & "}"
         
-        SimpleIfStatement |=> "if" & SimpleExpression & SimpleBlock & ("else" & SimpleBlock).opt
-        SimpleWhileStatement |=> "while" & SimpleExpression & SimpleBlock
+        SimpleIfStatement ==> "if" & SimpleExpression & SimpleBlock & ("else" & SimpleBlock).opt
+        SimpleWhileStatement ==> "while" & SimpleExpression & SimpleBlock
     }
     
     override init(tokenizer: TokenizerBase<SimpleContext>) {
