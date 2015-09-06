@@ -17,20 +17,158 @@ class SimpleScriptNode: SimpleNode {
     var childNodes:[NodeBase] = []
 }
 
-class SimpleStatementNode: SimpleNode {}
-class SimpleDeclarationNode: SimpleNode {}
+//class SimpleStatementNode: SimpleNode {}
+//class SimpleDeclarationNode: SimpleNode {}
+class SimpleVariableDeclarationNode: SimpleNode {
+    var variable: NodeBase
+    var initial: NodeBase
+    init(variable: NodeBase, initial: NodeBase) {
+        self.variable = variable
+        self.initial = initial
+    }
+}
 
-class SimpleExpressionNode: SimpleNode {}
+//class SimpleExpressionNode: SimpleNode {}
 
-class SimpleIfNode: SimpleNode {}
-class SimpleWhileNode: SimpleNode {}
+class SimpleIfNode: SimpleNode {
+    var condition: NodeBase
+    var ifClause: NodeBase
+    var elseClause: NodeBase?
+    init(condition: NodeBase, ifClause: NodeBase, elseClause: NodeBase? = nil) {
+        self.condition = condition
+        self.ifClause = ifClause
+        self.elseClause = elseClause
+    }
+}
+class SimpleWhileNode: SimpleNode {
+    var condition: NodeBase
+    var codeBlock: NodeBase
+    init(condition: NodeBase, codeBlock: NodeBase) {
+        self.condition = condition
+        self.codeBlock = codeBlock
+    }
+}
 
-class SimpleBinaryNode: SimpleNode {}
-class SimpleUnaryNode: SimpleNode {}
+class SimpleBinaryNode: SimpleNode {
+    var lhs: NodeBase
+    var rhs: NodeBase
+    var operation: String
+    init(lhs: NodeBase, operation: String, rhs: NodeBase) {
+        self.lhs = lhs
+        self.operation = operation
+        self.rhs = rhs
+    }
+    static func createWithNodes(nodes: [NodeBase]) -> NodeBase {
+        assert(nodes.count > 0)
+        var resultNode = nodes[0]
+        var index = 1
+        while index < nodes.count {
+            assert(index + 2 <= nodes.count)
+            let operation = (nodes[index] as! TerminalNode).token.string
+            let newNode = SimpleBinaryNode(lhs: resultNode, operation: operation, rhs: nodes[index + 1])
+            index += 2
+            resultNode = newNode
+        }
+        return resultNode
+    }
+}
+class SimpleUnaryNode: SimpleNode {
+    var operation: String
+    var argument: NodeBase
+    init(operation: String, argument: NodeBase) {
+        self.operation = operation
+        self.argument = argument
+    }
+}
+class SimpleFuncallNode: SimpleNode {
+    var function: NodeBase
+    var arguments: NodeBase
+    init(function: NodeBase, arguments: NodeBase) {
+        self.function = function
+        self.arguments = arguments
+    }
+    static func createWithNodes(nodes: [NodeBase]) -> NodeBase {
+        assert(nodes.count > 0)
+        var resultNode = nodes[0]
+        var index = 1
+        while index < nodes.count {
+            assert(index + 1 <= nodes.count)
+            if let tNode = nodes[index] as? TerminalNode {
+                resultNode = SimpleMemberNode(target: resultNode, name: tNode.token.string)
+            } else {
+                resultNode = SimpleFuncallNode(function: resultNode, arguments: nodes[index])
+            }
+            ++index
+        }
+        return resultNode
+    }
+}
 
-class SimpleVariableNode: SimpleNode {}
-class SimpleConstantNode: SimpleNode {}
-class SimpleFactorNode: SimpleNode {}
+class SimpleVariableNode: SimpleNode {
+    var name: String
+    init(name: String) {
+        self.name = name
+    }
+    class func createWithToken(token: Token) -> NodeBase {
+        switch token.string {
+            case "true", "false":
+                return SimpleBoolNode(string: token.string)
+            case "nil":
+                return SimpleNilNode()
+        default:
+            return SimpleVariableNode(name: token.string)
+        }
+    }
+}
 
-class SimpleBlockNode: SimpleNode {}
-class SimpleParameterNode: SimpleNode {}
+class SimpleNumericNode: SimpleNode {
+    var value: Double
+    init(string: String) {
+        if let value = Double(string) {
+            self.value = value
+        } else {
+            fatalError("\(string.debugDescription) cannot be converted to Double")
+        }
+    }
+}
+
+class SimpleStringNode: SimpleNode {
+    static var regex = try! NSRegularExpression(pattern: "\\\\([\\\\'\"])", options: [])
+    var value: String
+    init(token: Token) {
+        let range = token.string.startIndex.successor()..<token.string.endIndex.predecessor()
+        let string = token.string[range]
+        let nsRange = NSRange(0..<string.utf16.count)
+        self.value = SimpleStringNode.regex.stringByReplacingMatchesInString(string, options: [], range: nsRange, withTemplate: "$1")
+    }
+}
+
+class SimpleBoolNode: SimpleNode {
+    var value: Bool
+    init(string: String) {
+        if string == "true" {
+            value = true
+        } else if string == "false" {
+            value = false
+        } else {
+            fatalError("Bool value must be 'true' or 'false'")
+        }
+    }
+}
+
+class SimpleNilNode: SimpleNode {}
+//class SimpleFactorNode: SimpleNode {}
+
+class SimpleMemberNode: SimpleNode {
+    var name: String
+    var target: NodeBase
+    init(target: NodeBase, name: String) {
+        self.target = target
+        self.name = name
+    }
+}
+
+class SimpleBlockNode: SimpleNode {
+    var childNodes: [NodeBase] = []
+}
+//class SimpleParameterNode: SimpleNode {}

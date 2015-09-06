@@ -382,7 +382,7 @@ class SwiftParsingEngineTests: XCTestCase {
     
     func testParser1() {
         let parser = Parser(tokenizer: tokenizer)
-        var matches = HTMLOutputStatement.match(parser)
+        var matches = parser.HTMLOutputStatement.match(parser)
         let string = (matches[0].nodes[0] as! HTMLOutputNode).text
         print(string.debugDescription)
         XCTAssert(matches.count == 1 && string.hasPrefix("\n<") && string.hasSuffix("  "))
@@ -438,7 +438,7 @@ class SwiftParsingEngineTests: XCTestCase {
     func testParser2() {
         let st = SimpleTokenizer(string: simpleTestedString)
         let parser = SimpleParser(tokenizer: st)
-        if let node = parser.parse(SimpleScript) as? SimpleScriptNode {
+        if let node = parser.parse(parser.SimpleScript) as? SimpleScriptNode {
             for childNode in node.childNodes {
                 print(childNode)
             }
@@ -454,7 +454,7 @@ class SwiftParsingEngineTests: XCTestCase {
         self.measureBlock {
             // Put the code you want to measure the time of here.
             parser.reset()
-            _ = parser.parse(SimpleScript)
+            _ = parser.parse(parser.SimpleScript)
         }
     }
     

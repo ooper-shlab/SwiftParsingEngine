@@ -38,62 +38,136 @@ class SimpleNonTerminal: NonTerminalBase<SimpleContext, SimpleState> {
     }
 }
 
-//MARK: Non terminal symbols
-let SimpleScript = SimpleNonTerminal{match in
-    let node = SimpleScriptNode()
-    node.childNodes = match.nodes.filter{$0 is SimpleNode}
-    return node
-}
-let SimpleStatement = SimpleNonTerminal{_ in SimpleStatementNode()}
-let SimpleExpression = SimpleNonTerminal{_ in SimpleExpressionNode()}
-let SimpleDeclaration = SimpleNonTerminal{_ in SimpleDeclarationNode()}
-let SimpleIfStatement = SimpleNonTerminal{_ in SimpleIfNode()}
-let SimpleWhileStatement = SimpleNonTerminal{_ in SimpleWhileNode()}
-
-let SimpleAssignment = SimpleNonTerminal{_ in SimpleBinaryNode()}
-let SimpleDisjunction = SimpleNonTerminal{_ in SimpleBinaryNode()}
-let SimpleConjunction = SimpleNonTerminal{_ in SimpleBinaryNode()}
-let SimpleNegation = SimpleNonTerminal{_ in SimpleUnaryNode()}
-let SimpleComparative = SimpleNonTerminal{_ in SimpleBinaryNode()}
-let SimpleAddition = SimpleNonTerminal{_ in SimpleBinaryNode()}
-let SimpleTerm = SimpleNonTerminal{_ in SimpleBinaryNode()}
-let SimplePrefix = SimpleNonTerminal{_ in SimpleUnaryNode()}
-let SimpleFuncall = SimpleNonTerminal{_ in SimpleBinaryNode()}
-let SimpleParameter = SimpleNonTerminal{_ in SimpleParameterNode()}
-
-let SimpleFactor = SimpleNonTerminal{_ in SimpleFactorNode()}
-let SimpleConstant = SimpleNonTerminal{_ in SimpleConstantNode()}
-
-let SimpleBlock = SimpleNonTerminal{_ in SimpleBlockNode()}
-
-//MARK: Terminal symbols
-let SimpleVariable = Terminal(SimpleIdentifierToken)
-let SimpleStringConstant = Terminal(SimpleStringLiteralToken)
-let SimpleNumericConstant = Terminal(SimpleNumericLiteralToken)
-let SimpleEnd = Terminal(EndToken)
-let SN = Terminal(SimpleNewlineToken)
-let SimpleAssignmentOperator = AnySymbol("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
-let SimpleDisjunctionOperator = AnySymbol("||", "??")
-let SimpleConjunctionOperator = AnySymbol("&&")
-let SimpleComparativeOperator = AnySymbol("<", "<=", ">", ">=", "==", "!=", "===", "!==")
-let SimpleAdditionalOperator = AnySymbol("+", "-", "|", "^")
-let SimpleMultiplicationOperator = AnySymbol("*", "/", "&", "<<", ">>", ">>>")
-let SimplePrefixOperator = AnySymbol("+", "-", "!", "~")
-
 class SimpleParser: ParserBase<SimpleContext, SimpleState> {
-    var _state: SimpleState = SimpleState()
-    override var state: SimpleState {
-        get {
-            _state.context = tokenizer.currentContext
-            _state.currentPosition = tokenizer.currentPosition
-            return _state
-        }
-        set {
-            _state = newValue
-            tokenizer.currentContext = _state.context
-            tokenizer.currentPosition = _state.currentPosition
+    
+    //MARK: Non terminal symbols
+    let SimpleScript = SimpleNonTerminal{match in
+        let node = SimpleScriptNode()
+        node.childNodes = match.nodes.filter{$0 is SimpleNode}
+        return node
+    }
+    let SimpleStatement = SimpleNonTerminal{match in
+        return match.nodes.first!
+    }
+    let SimpleExpression = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        if nodes.count == 1 {
+            return nodes[0]
+        } else if nodes.count == 3 {
+            let operation = (nodes[1] as! TerminalNode).token.string
+            return SimpleBinaryNode(lhs: nodes[0], operation: operation, rhs: nodes[2])
+        } else {
+            fatalError("Parsing inconsistency error in SimpleExpression")
         }
     }
+    let SimpleDeclaration = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        assert(nodes.count == 4)
+        return SimpleVariableDeclarationNode(variable: nodes[1], initial: nodes[3])
+    }
+    
+    let SimpleIfStatement = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        assert(nodes.count == 3 || nodes.count == 5)
+        let elseClause: NodeBase? = nodes.count == 5 ? nodes[4] : nil
+        return SimpleIfNode(condition: nodes[1], ifClause: nodes[2], elseClause: elseClause)
+    }
+    
+    let SimpleWhileStatement = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        assert(nodes.count == 3)
+        return SimpleWhileNode(condition: nodes[1], codeBlock: nodes[2])
+    }
+    
+//    let SimpleAssignment = SimpleNonTerminal{_ in SimpleBinaryNode()}
+    let SimpleDisjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleConjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
+//    let SimpleNegation = SimpleNonTerminal{_ in SimpleUnaryNode()}
+    let SimpleComparative = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleAddition = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleTerm = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
+    
+    let SimplePrefix = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        if nodes.count == 1 {
+            return nodes[0]
+        } else if nodes.count == 2 {
+            let operation = (nodes[0] as! TerminalNode).token.string
+            return SimpleUnaryNode(operation: operation, argument: nodes[1])
+        } else {
+            fatalError("Parsing inconsistency error in SimplePrefix")
+        }
+    }
+    
+    let SimpleFuncall = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        if nodes.count == 1 && nodes[0] is SimpleIfNode {
+            return nodes[0]
+        } else if nodes.count >= 1 {
+            return SimpleFuncallNode.createWithNodes(nodes)
+        } else {
+            fatalError("Parsing inconsistency error in SimpleExpression")
+        }
+    }
+    
+    let SimpleParameter = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        assert(nodes.count == 3 || nodes.count == 2)
+        if nodes.count == 3 {
+            return nodes[1]
+        } else if nodes.count == 2 {
+            return nodes[1]
+        } else {
+            fatalError("Parsing inconsistency error in SimpleParameter")
+        }
+    }
+    
+    let SimpleFactor = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        assert(nodes.count == 1 || nodes.count == 3)
+        if nodes.count == 3 {
+            return nodes[1]
+        } else {
+            assert(nodes[0] is TerminalNode)
+            let tNode = nodes[0] as! TerminalNode
+            if tNode.token is SimpleIdentifierToken {
+                return SimpleVariableNode(name: tNode.token.string)
+            } else if tNode.token is SimpleNumericLiteralToken {
+                return SimpleNumericNode(string: tNode.token.string)
+            } else if tNode.token is SimpleStringLiteralToken {
+                return SimpleStringNode(token: tNode.token)
+            } else {
+                fatalError("Parsing inconsistency error in SimpleFactor")
+            }
+        }
+    }
+    
+    let SimpleConstant = SimpleNonTerminal{match in
+        let nodes = match.nodes
+        assert(nodes.count == 1)
+        return nodes[0]
+    }
+    
+    let SimpleBlock = SimpleNonTerminal{match in
+        let node = SimpleBlockNode()
+        node.childNodes = match.nodes.filter{$0 is SimpleNode}
+        return node
+    }
+    
+    //MARK: Terminal symbols
+    let SimpleVariable = Terminal(SimpleIdentifierToken)
+    let SimpleStringConstant = Terminal(SimpleStringLiteralToken)
+    let SimpleNumericConstant = Terminal(SimpleNumericLiteralToken)
+    let SimpleEnd = Terminal(EndToken)
+    let SN = Terminal(SimpleNewlineToken)
+    let SimpleAssignmentOperator = AnySymbol("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
+    let SimpleDisjunctionOperator = AnySymbol("||", "??")
+    let SimpleConjunctionOperator = AnySymbol("&&")
+    let SimpleComparativeOperator = AnySymbol("<", "<=", ">", ">=", "==", "!=", "===", "!==")
+    let SimpleAdditionalOperator = AnySymbol("+", "-", "|", "^")
+    let SimpleMultiplicationOperator = AnySymbol("*", "/", "&", "<<", ">>", ">>>")
+    let SimplePrefixOperator = AnySymbol("+", "-", "!", "~")
+    
     override func setup() {
         SimpleScript ==> (SN* & (SimpleStatement | SimpleDeclaration))* & SN* & SimpleEnd
         
@@ -130,10 +204,24 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         
         SimpleConstant ==> SimpleNumericConstant | SimpleStringConstant
         
-        SimpleBlock ==> "{" & SimpleStatement* & "}"
+        SimpleBlock ==> "{" & (SN* & SimpleStatement)* & SN* & "}"
         
         SimpleIfStatement ==> "if" & SimpleExpression & SimpleBlock & ("else" & SimpleBlock).opt
         SimpleWhileStatement ==> "while" & SimpleExpression & SimpleBlock
+    }
+    
+    var _state: SimpleState = SimpleState()
+    override var state: SimpleState {
+        get {
+            _state.context = tokenizer.currentContext
+            _state.currentPosition = tokenizer.currentPosition
+            return _state
+        }
+        set {
+            _state = newValue
+            tokenizer.currentContext = _state.context
+            tokenizer.currentPosition = _state.currentPosition
+        }
     }
     
     override init(tokenizer: TokenizerBase<SimpleContext>) {
