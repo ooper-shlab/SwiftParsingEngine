@@ -9,12 +9,17 @@
 import Foundation
 import SwiftParsingEngine
 
-class SimpleNode: NodeBase {
+class SimpleNode: NodeBase, CustomDebugStringConvertible {
+    var debugDescription: String {return String(self.dynamicType)}
 }
 
 class SimpleScriptNode: SimpleNode {
     ///SimpleStatementNode or SimpleDeclarationNode
     var childNodes:[NodeBase] = []
+    
+    override var debugDescription: String {
+        return childNodes.map{String(reflecting: $0)}.joinWithSeparator(";")
+    }
 }
 
 //class SimpleStatementNode: SimpleNode {}
@@ -25,6 +30,10 @@ class SimpleVariableDeclarationNode: SimpleNode {
     init(variable: NodeBase, initial: NodeBase) {
         self.variable = variable
         self.initial = initial
+    }
+    
+    override var debugDescription: String {
+        return "var \(variable) = \(initial)"
     }
 }
 
@@ -39,6 +48,10 @@ class SimpleIfNode: SimpleNode {
         self.ifClause = ifClause
         self.elseClause = elseClause
     }
+    
+    override var debugDescription: String {
+        return "if( \(condition) ) {\(ifClause)}" + (elseClause != nil ? " else {\(elseClause)}" : "")
+    }
 }
 class SimpleWhileNode: SimpleNode {
     var condition: NodeBase
@@ -46,6 +59,10 @@ class SimpleWhileNode: SimpleNode {
     init(condition: NodeBase, codeBlock: NodeBase) {
         self.condition = condition
         self.codeBlock = codeBlock
+    }
+    
+    override var debugDescription: String {
+        return "while( \(condition) ) {\(codeBlock)}"
     }
 }
 
@@ -71,6 +88,10 @@ class SimpleBinaryNode: SimpleNode {
         }
         return resultNode
     }
+    
+    override var debugDescription: String {
+        return "(\(lhs))\(operation)(\(rhs))"
+    }
 }
 class SimpleUnaryNode: SimpleNode {
     var operation: String
@@ -78,6 +99,10 @@ class SimpleUnaryNode: SimpleNode {
     init(operation: String, argument: NodeBase) {
         self.operation = operation
         self.argument = argument
+    }
+    
+    override var debugDescription: String {
+        return "\(operation)(\(argument))"
     }
 }
 class SimpleFuncallNode: SimpleNode {
@@ -102,6 +127,10 @@ class SimpleFuncallNode: SimpleNode {
         }
         return resultNode
     }
+    
+    override var debugDescription: String {
+        return "(\(function))(\(arguments))"
+    }
 }
 
 class SimpleVariableNode: SimpleNode {
@@ -119,6 +148,10 @@ class SimpleVariableNode: SimpleNode {
             return SimpleVariableNode(name: token.string)
         }
     }
+    
+    override var debugDescription: String {
+        return name
+    }
 }
 
 class SimpleNumericNode: SimpleNode {
@@ -130,6 +163,10 @@ class SimpleNumericNode: SimpleNode {
             fatalError("\(string.debugDescription) cannot be converted to Double")
         }
     }
+    
+    override var debugDescription: String {
+        return String(value)
+    }
 }
 
 class SimpleStringNode: SimpleNode {
@@ -140,6 +177,10 @@ class SimpleStringNode: SimpleNode {
         let string = token.string[range]
         let nsRange = NSRange(0..<string.utf16.count)
         self.value = SimpleStringNode.regex.stringByReplacingMatchesInString(string, options: [], range: nsRange, withTemplate: "$1")
+    }
+    
+    override var debugDescription: String {
+        return value.debugDescription
     }
 }
 
@@ -154,9 +195,17 @@ class SimpleBoolNode: SimpleNode {
             fatalError("Bool value must be 'true' or 'false'")
         }
     }
+    
+    override var debugDescription: String {
+        return String(value)
+    }
 }
 
-class SimpleNilNode: SimpleNode {}
+class SimpleNilNode: SimpleNode {
+    override var debugDescription: String {
+        return "nil"
+    }
+}
 //class SimpleFactorNode: SimpleNode {}
 
 class SimpleMemberNode: SimpleNode {
@@ -166,9 +215,17 @@ class SimpleMemberNode: SimpleNode {
         self.target = target
         self.name = name
     }
+    
+    override var debugDescription: String {
+        return "(\(target)).\(name)"
+    }
 }
 
 class SimpleBlockNode: SimpleNode {
     var childNodes: [NodeBase] = []
+    
+    override var debugDescription: String {
+        return childNodes.map{String(reflecting: $0)}.joinWithSeparator(";")
+    }
 }
 //class SimpleParameterNode: SimpleNode {}

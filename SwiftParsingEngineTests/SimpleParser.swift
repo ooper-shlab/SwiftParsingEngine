@@ -40,7 +40,10 @@ class SimpleNonTerminal: NonTerminalBase<SimpleContext, SimpleState> {
 
 class SimpleParser: ParserBase<SimpleContext, SimpleState> {
     
+    //
     //MARK: Non terminal symbols
+    //
+    
     let SimpleScript = SimpleNonTerminal{match in
         let node = SimpleScriptNode()
         node.childNodes = match.nodes.filter{$0 is SimpleNode}
@@ -154,7 +157,10 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         return node
     }
     
+    //
     //MARK: Terminal symbols
+    //
+    
     let SimpleVariable = Terminal(SimpleIdentifierToken)
     let SimpleStringConstant = Terminal(SimpleStringLiteralToken)
     let SimpleNumericConstant = Terminal(SimpleNumericLiteralToken)

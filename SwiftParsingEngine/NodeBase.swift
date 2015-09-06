@@ -12,10 +12,14 @@ public class NodeBase {
     public init() {}
 }
 
-public class TerminalNode: NodeBase {
+public class TerminalNode: NodeBase, CustomDebugStringConvertible {
     public var token: Token
     
     init(token: Token) {
         self.token = token
+    }
+    
+    public var debugDescription: String {
+        return "`\(token.string)`"
     }
 }

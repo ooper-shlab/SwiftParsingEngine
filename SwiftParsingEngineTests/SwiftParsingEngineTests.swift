@@ -439,9 +439,8 @@ class SwiftParsingEngineTests: XCTestCase {
         let st = SimpleTokenizer(string: simpleTestedString)
         let parser = SimpleParser(tokenizer: st)
         if let node = parser.parse(parser.SimpleScript) as? SimpleScriptNode {
-            for childNode in node.childNodes {
-                print(childNode)
-            }
+            debugPrint(node)
+            XCTAssert(node.debugDescription == "var `x` = 0.0;if( (x)==(0.0) ) {(print)(\"\")}")
         } else {
             XCTFail()
         }
