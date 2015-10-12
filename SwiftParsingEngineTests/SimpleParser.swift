@@ -219,13 +219,11 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
     var _state: SimpleState = SimpleState()
     override var state: SimpleState {
         get {
-            _state.context = tokenizer.currentContext
             _state.currentPosition = tokenizer.currentPosition
             return _state
         }
         set {
             _state = newValue
-            tokenizer.currentContext = _state.context
             tokenizer.currentPosition = _state.currentPosition
         }
     }

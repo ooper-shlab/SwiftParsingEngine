@@ -19,7 +19,11 @@ class ExpressionNode: NodeBase {}
 
 class PrefixExpressionNode: NodeBase {}
 
+class PostfixExpressionNode: NodeBase {}
+
 class BinaryExpressionNode: NodeBase {}
+
+class BinaryTailNode: NodeBase {}
 
 class ForStatementNode: NodeBase {}
 
@@ -32,7 +36,7 @@ class HTMLOutputNode: NodeBase {
         for node in childNodes {
             switch node {
             case let t as TerminalNode:
-                print(t)
+                //print(t)
                 text += t.token.string
                 break
             default:

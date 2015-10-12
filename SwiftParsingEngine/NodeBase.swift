@@ -15,7 +15,7 @@ public class NodeBase {
 public class TerminalNode: NodeBase, CustomDebugStringConvertible {
     public var token: Token
     
-    init(token: Token) {
+    public init(token: Token) {
         self.token = token
     }
     

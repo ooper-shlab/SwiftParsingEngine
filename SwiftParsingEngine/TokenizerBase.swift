@@ -70,7 +70,6 @@ public enum TokenizerError: ErrorType {
 }
 public class TokenizerBase<C: LexicalContextType where C.Element == C, C: Hashable> {
     
-    public var currentContext: C = .Initial
     ///position in UTF-16
     public var currentPosition: Int = 0
     
@@ -89,43 +88,44 @@ public class TokenizerBase<C: LexicalContextType where C.Element == C, C: Hashab
     
     public func reset(string: String) {
         self.string = string
-        currentContext = .Initial
         currentPosition = 0
         cachedToken = [:]
     }
     public func reset() {
-        currentContext = .Initial
         currentPosition = 0
     }
     
-    public func getToken() throws -> Token {
-        if let cache = cachedToken[currentContext] {
+//    public func getToken() throws -> Token {
+//        return try getToken(C.Initial)
+//    }
+    public func getToken(context: C) throws -> Token {
+        if let cache = cachedToken[context] {
             if let token = cache[currentPosition] {
                 //print("(cache)-->"+token.string.debugDescription)
                 currentPosition += token.range.length
                 return token
             }
         } else {
-            cachedToken[currentContext] = [:]
+            cachedToken[context] = [:]
         }
         let range = NSRange(currentPosition..<string.utf16.count)
         if range.length == 0 {
             return EndToken("", range)
         }
         for matcher in matchers
-        where matcher.context.contains(currentContext) {
+        where matcher.context.contains(context) {
             //print("--"+matcher.regex.pattern.debugDescription)
             if let match = matcher.regex.firstMatchInString(string, options: [], range: range) {
                 let range = match.numberOfRanges == 1 ? match.range : match.rangeAtIndex(1)
                 let substring = (string as NSString).substringWithRange(range)
                 let token = matcher.proc(substring, match.range)
-                cachedToken[currentContext]![currentPosition] = token //###
+                cachedToken[context]![currentPosition] = token //###
                 currentPosition += match.range.length
                 return token
             }
         }
         let head = (string as NSString).substringWithRange(NSRange(currentPosition..<currentPosition+5))
-        throw TokenizerError.NoMatchingPattern("No matches in current state: \(currentContext.rawValue) for \(head.debugDescription)")
+        throw TokenizerError.NoMatchingPattern("No matches in current state: \(context) for \(head.debugDescription)")
     }
 
 }

@@ -14,7 +14,7 @@ where C.Element == C, S.ContextType == C> {
     public var nodes: [NodeBase]
     ///Parsing state after the match
     public var state: S
-    init(pattern: PatternBase, nodes: [NodeBase], state: S) {
+    public init(pattern: PatternBase, nodes: [NodeBase], state: S) {
         self.pattern = pattern
         self.nodes = nodes
         self.state = state
@@ -30,7 +30,7 @@ public class PatternBase {
         self.string = String(self.dynamicType)
     }
     
-    //MARK: extensions to use Token as Pattern
+    // MARK: extensions to use Token as Pattern
     func or(pattern: PatternBase)->AnyPattern {
         if let anyPattern = pattern as? AnyPattern {
             return AnyPattern([self] + anyPattern.patterns)
@@ -101,6 +101,17 @@ public class AnyPattern: PatternBase {
     }
 }
 
+public class FailPattern: PatternBase {
+    public override init() {
+        super.init()
+    }
+    
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+            return []
+    }
+}
+
 public class NonTerminalBase<C: LexicalContextType, S: ParsingStateType
 where C.Element == C, S.ContextType == C, C: Hashable>: PatternBase {
     public typealias NodeConstructorType = SyntaxMatch<C,S> -> NodeBase
@@ -108,10 +119,24 @@ where C.Element == C, S.ContextType == C, C: Hashable>: PatternBase {
     public var nodeConstructor: NodeConstructorType?
     ///
     var pattern: PatternBase? = nil
+    ///Debuggin: report matches
+    public var shouldReportMatches: Bool = false
+    ///Debuggin: report tests
+    public var shouldReportTests: Bool = false
+    
 
     public init(nodeConstructor: NodeConstructorType) {
         self.nodeConstructor = nodeConstructor
         super.init()
+    }
+    
+    public init(_ name: String, nodeConstructor: NodeConstructorType) {
+        self.nodeConstructor = nodeConstructor
+        super.init(name)
+    }
+    
+    public override init(_ name: String) {
+        super.init(name)
     }
     
     func addPattern(pattern: PatternBase) {
@@ -119,19 +144,44 @@ where C.Element == C, S.ContextType == C, C: Hashable>: PatternBase {
     }
     
     override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
-        guard let pattern = self.pattern
-            ,nodeConstructor = self.nodeConstructor else {fatalError("match called before definition")}
+        guard let pattern = self.pattern else {fatalError("match called before definition")}
+        if nodeConstructor == nil {nodeConstructor = DefaultNodeConstructor}
+        if shouldReportTests {
+            print("\(string) about to start testing")
+        }
         let matches = pattern.match(parser)
+        if (shouldReportMatches || shouldReportTests) && !matches.isEmpty {
+            print("\(string) found matches(\(matches.count))")
+        }
+        if shouldReportTests {
+            if matches.isEmpty {
+                print("\(string) testing failed")
+            }
+            print("\(string) end testing")
+        }
         return matches.map {match in
-            let nodes = [nodeConstructor(match)]
+            let nodes = [nodeConstructor!(match)]
             let state = match.state
             return SyntaxMatch(pattern: self, nodes: nodes, state: state)
         }
     }
 }
+///Intended to use while Syntax debugging
+class PlainNode<C: LexicalContextType, S: ParsingStateType
+where C.Element == C, S.ContextType == C, C: Hashable>: NodeBase {
+    let match: SyntaxMatch<C,S>
+    init(match: SyntaxMatch<C,S>) {
+        self.match = match
+    }
+}
+///Intended to use while Syntax debugging
+func DefaultNodeConstructor<C: LexicalContextType, S: ParsingStateType
+where C.Element == C, S.ContextType == C, C: Hashable>(match: SyntaxMatch<C,S>) -> NodeBase {
+    return PlainNode(match: match)
+}
 
 public class Terminal: PatternBase {
-    var type: Token.Type? = nil
+    public var type: Token.Type? = nil
     var predicate: String->Bool
     
     public init(_ type: Token.Type) {
@@ -139,7 +189,7 @@ public class Terminal: PatternBase {
         self.predicate = {_ in true}
         super.init()
     }
-    init(_ type: Token.Type, _ predicate: String->Bool) {
+    public init(_ type: Token.Type, _ predicate: String->Bool) {
         self.type = type
         self.predicate = predicate
         super.init()
@@ -149,17 +199,17 @@ public class Terminal: PatternBase {
         self.init(type) {nameSet.contains($0)}
     }
     
-    override func match<C: LexicalContextType, S: ParsingStateType
+    override public func match<C: LexicalContextType, S: ParsingStateType
         where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         do {
-            let token = try parser.tokenizer.getToken()
+            let token = try parser.tokenizer.getToken(parser.state.context)
             //print("matching \(token.string.debugDescription) to \(self.type!)")
             if token.dynamicType == self.type {
                 let nodes: [NodeBase] = [TerminalNode(token: token)]
                 result = [SyntaxMatch(pattern: self, nodes: nodes, state: parser.state)]
-                //print("-->succeeded")
+                //print("\(self.type!)-->succeeded \(token.string.debugDescription)")
             } else {
                 //print("-->failed")
             }
@@ -172,9 +222,9 @@ public class Terminal: PatternBase {
 }
 
 public class Symbol: PatternBase, StringLiteralConvertible {
-    override init(_ string: String) {
-        super.init(string)
-    }
+//    override init(_ string: String) {
+//        super.init(string)
+//    }
     required public init(extendedGraphemeClusterLiteral value: String) {
         super.init(value)
     }
@@ -190,13 +240,18 @@ public class Symbol: PatternBase, StringLiteralConvertible {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         do {
-            let token = try parser.tokenizer.getToken()
+            let token = try parser.tokenizer.getToken(parser.state.context)
+            //print("matching \(token.string.debugDescription) to \(self.string)")
             if token.string == self.string {
                 let nodes: [NodeBase] = [TerminalNode(token: token)]
                 result = [SyntaxMatch(pattern: self, nodes: nodes, state: parser.state)]
+                //print("\(string.debugDescription)-->succeeded \(token.string.debugDescription)")
+            } else {
+                //print("-->failed")
             }
-        } catch _  {
-            fatalError()
+        } catch let error {
+            print(error)
+            fatalError(self.string.debugDescription)
         }
         parser.state = savedState
         return result
@@ -217,10 +272,14 @@ public class AnySymbol: PatternBase {
         let savedState = parser.state
         var result: [SyntaxMatch<C,S>] = []
         do {
-            let token = try parser.tokenizer.getToken()
+            let token = try parser.tokenizer.getToken(parser.state.context)
+            //print("matching \(token.string.debugDescription) to \(self.strings.debugDescription)")
             if self.strings.contains(token.string) {
                 let nodes: [NodeBase] = [TerminalNode(token: token)]
                 result = [SyntaxMatch(pattern: self, nodes: nodes, state: parser.state)]
+                //print("\(strings.debugDescription)-->succeeded \(token.string.debugDescription)")
+            } else {
+                //print("-->failed")
             }
         } catch _  {
             fatalError()
@@ -230,19 +289,49 @@ public class AnySymbol: PatternBase {
     }
 }
 
-class ToStateBase<C: LexicalContextType, S: ParsingStateType
+public class SetState<C: LexicalContextType, S: ParsingStateType
 where C.Element == C, S.ContextType == C, C: Hashable>:  PatternBase {
     var context: C
-    init(_ context: C) {
+    public init(_ context: C) {
         self.context = context
         super.init(String(context))
     }
     
     override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
-        let savedState = parser.state
-        parser.tokenizer.currentContext = self.context
+        parser.state.context = self.context
         let result: [SyntaxMatch<C,S>] = [SyntaxMatch(pattern: self, nodes: [], state: parser.state)]
-        parser.state = savedState
+        return result
+    }
+}
+public class PushAndSetState<C: LexicalContextType, S: StackableParsingState
+where C.Element == C, S.ContextType == C, C: Hashable>:  PatternBase {
+    var context: C
+    var extraInfo: S.ExtraInfoType?
+    public init(_ context: C) {
+        self.context = context
+        super.init(String(context))
+    }
+    public init(_ context: C, extraInfo: S.ExtraInfoType) {
+        self.context = context
+        self.extraInfo = extraInfo
+        super.init(String(context))
+    }
+    
+    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+        parser.state.pushAndSet(self.context, newExtraInfo: self.extraInfo)
+        let result: [SyntaxMatch<C,S>] = [SyntaxMatch(pattern: self, nodes: [], state: parser.state)]
+        return result
+    }
+}
+public class PopState<C: LexicalContextType, S: StackableParsingState
+where C.Element == C, S.ContextType == C, C: Hashable>:  PatternBase {
+    public override init() {
+        super.init("PopState")
+    }
+    
+    override func match(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+        parser.state.pop()
+        let result: [SyntaxMatch<C,S>] = [SyntaxMatch(pattern: self, nodes: [], state: parser.state)]
         return result
     }
 }
@@ -328,6 +417,38 @@ public class RepeatPattern: PatternBase {
     }
 }
 
+///Non-backtracking locally maximum-length repeat
+public class LocalMaximumRepeatPattern: RepeatPattern {
+    
+    override func match<C: LexicalContextType, S: ParsingStateType
+        where C.Element == C, S.ContextType == C>(parser: ParserBase<C,S>) -> [SyntaxMatch<C,S>] {
+            let savedState = parser.state
+            var lastMatches: [SyntaxMatch<C,S>] = [SyntaxMatch(pattern: self, nodes: [], state: savedState)]
+            var result: [SyntaxMatch<C,S>] = []
+            outer: for var i = 0;; ++i {
+                if i >= minCount {
+                    result = lastMatches
+                }
+                var updatedResult: [SyntaxMatch<C,S>] = []
+                for lastMatch in lastMatches {
+                    parser.state = lastMatch.state
+                    let nextMatches = pattern.match(parser)
+                    for nextMatch in nextMatches {
+                        let nodes = lastMatch.nodes + nextMatch.nodes
+                        let state = nextMatch.state
+                        updatedResult.append(SyntaxMatch(pattern: self, nodes: nodes, state: state))
+                    }
+                }
+                if updatedResult.isEmpty {
+                    break outer
+                }
+                lastMatches = updatedResult
+            }
+            parser.state = savedState
+            return result
+    }
+}
+
 infix operator ==> {precedence 90}
 public func ==> <C: LexicalContextType, S: ParsingStateType
     where C.Element == C, S.ContextType == C>(lhs: NonTerminalBase<C,S>, rhs: PatternBase) {
@@ -357,7 +478,9 @@ public func & (lhs: PatternBase, rhs: PatternBase)->SequencePattern {
 }
 
 postfix operator + {}
+postfix operator +-> {}
 postfix operator * {}
+postfix operator *-> {}
 
 public postfix func + (pattern: PatternBase) -> RepeatPattern {
     return RepeatPattern(pattern, minCount: 1)
@@ -367,10 +490,26 @@ public postfix func * (pattern: PatternBase) -> RepeatPattern {
     return RepeatPattern(pattern)
 }
 
+public postfix func +-> (pattern: PatternBase) -> LocalMaximumRepeatPattern {
+    return LocalMaximumRepeatPattern(pattern, minCount: 1)
+}
+
+public postfix func *-> (pattern: PatternBase) -> LocalMaximumRepeatPattern {
+    return LocalMaximumRepeatPattern(pattern)
+}
+
 public protocol ParsingStateType {
     typealias ContextType: LexicalContextType
-    var context: ContextType {get}
+    var context: ContextType {get set}
     init()
+}
+public protocol StackableParsingState: ParsingStateType {
+    ///Extra information type saved in stack with ContextType
+    typealias ExtraInfoType
+    mutating func pushAndSet(newContext: ContextType)
+    ///Use default if newExtraInfo == nil
+    mutating func pushAndSet(newContext: ContextType, newExtraInfo: ExtraInfoType?)
+    mutating func pop()
 }
 public class ParserBase<C: LexicalContextType, S: ParsingStateType
 where C.Element == C, S.ContextType == C, C: Hashable> {
