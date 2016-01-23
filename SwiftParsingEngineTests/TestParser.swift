@@ -3,13 +3,11 @@
 //  SwiftParsingEngine
 //
 //  Created by OOPer in cooperation with shlab.jp, on 2015/8/23.
-//  Copyright (c) 2015 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright (c) 2015-2016 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import Foundation
 import SwiftParsingEngine
-
-import GameKit
 
 struct ParsingState: StackableParsingState {
     typealias ExtraInfoType = String
@@ -41,35 +39,11 @@ struct ParsingState: StackableParsingState {
     }
 }
 
-class NonTerminal: NonTerminalBase<LexicalContext, ParsingState> {
-    override init(_ name: String, nodeConstructor: NodeConstructorType) {
-        super.init(name, nodeConstructor :nodeConstructor)
-    }
-    override init(_ name: String) {
-        super.init(name)
-    }
-}
+typealias NonTerminal = NonTerminalBase<LexicalContext, ParsingState>
 
-class TerminalBase<C: LexicalContextType, S: ParsingStateType
-where C.Element == C, S.ContextType == C, C: Hashable>: Terminal {
-    override init(_ type: Token.Type) {
-        super.init(type)
-    }
-    /*
-    override init(_ type: Token.Type, _ predicate: String->Bool) {
-        super.init(type, predicate)
-    }
-    convenience init(_ type: Token.Type, _ names: String...) {
-        let nameSet = Set(names)
-        self.init(type) {nameSet.contains($0)}
-    }
-*/
-    override func match(parser: ParserBase<C, S>) -> [SyntaxMatch<C, S>] {
-        return super.match(parser)
-    }
-}
+typealias Terminal = TerminalBase<LexicalContext, ParsingState>
 
-class TagStartClass: TerminalBase<LexicalContext, ParsingState> {
+class TagStartClass: Terminal {
     override init(_ type: Token.Type) {
         super.init(type)
     }
@@ -93,7 +67,7 @@ class TagStartClass: TerminalBase<LexicalContext, ParsingState> {
     }
 }
 
-class NestedTagStartClass: TerminalBase<LexicalContext, ParsingState> {
+class NestedTagStartClass: Terminal {
     override init(_ type: Token.Type) {
         super.init(type)
     }
@@ -118,7 +92,7 @@ class NestedTagStartClass: TerminalBase<LexicalContext, ParsingState> {
     }
 }
 
-class TagEndClass: TerminalBase<LexicalContext, ParsingState> {
+class TagEndClass: Terminal {
     override init(_ type: Token.Type) {
         super.init(type)
     }
@@ -147,16 +121,6 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
     
     //MARK: Non terminal symbols
     let Template = NonTerminal("Template"){_ in RootNode()}
-    func t(match: GKMatch?){
-        let idsArray: NSMutableArray = []
-        GKPlayer.loadPlayersForIdentifiers(idsArray as NSArray as! [String], withCompletionHandler: { (players, error) -> Void in
-        })
-        if match != nil {
-            for player in match!.players{
-                idsArray.addObject(player.playerID!)
-            }
-        }
-    }
     
     //Expression
     let Expression = NonTerminal("Expression")
@@ -319,19 +283,19 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
 
     //
     let wl = NonTerminal("wl") {_ in BlockNode()}
-    let Fail = FailPattern()
+    let Fail = FailPattern<LexicalContext, ParsingState>()
     
     //MARK: Terminal symbols
-    let PrefixOperator = Terminal(OperatorToken.self, "&", "+", "-", "!", "~", "++", "--")
-    let PostfixOperator = Terminal(OperatorToken.self, "++", "--")
-    let BinaryOperator = Terminal(OperatorToken.self, "+", "-", "*", "/", "%", "&+", "&-", "&*",
+    let PrefixOperator = Terminal(type: OperatorToken.self, "&", "+", "-", "!", "~", "++", "--")
+    let PostfixOperator = Terminal(type: OperatorToken.self, "++", "--")
+    let BinaryOperator = Terminal(type: OperatorToken.self, "+", "-", "*", "/", "%", "&+", "&-", "&*",
     "|","&","^","||","&&","??",
         "<<",">>",
     "==","!=","===","!==",">","<","<=","=>","~=")
-    let AssignmentOperator = Terminal(OperatorToken.self, "=", "+=", "-=", "*=", "/=", "%=",
+    let AssignmentOperator = Terminal(type: OperatorToken.self, "=", "+=", "-=", "*=", "/=", "%=",
         "&+=", "&-=", "&*=", "<<=", ">>=",
         "|=","&=","^=","||=","&&=","??=")
-    let TryOperator = "try" as Symbol
+    let TryOperator = "try" as Symbol<LexicalContext, ParsingState>
     let Init = Terminal(IdentifierToken)
     let Identifier = Terminal(IdentifierToken)
     let IntegerLiteral = Terminal(IntegerToken)
@@ -339,13 +303,13 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
     let StringLiteral = Terminal(StringToken)
     let HTMLText = Terminal(HTMLTextToken)
     let Dot = Terminal(DotToken)
-    let DecimalDigits = Terminal(IntegerToken.self, {
+    let DecimalDigits = Terminal(type: IntegerToken.self, {
         $0.rangeOfCharacterFromSet(NSCharacterSet(charactersInString: "xob_")) == nil
     })
     let ls = Terminal(NewLine) //line separator
     let ws = Terminal(WhiteSpace) //word separator
     let End = Terminal(EndToken)
-    let SemiColon = ";" as Symbol
+    let SemiColon = ";" as Symbol<LexicalContext, ParsingState>
     let TagStart = TagStartClass(TagOpener) //###TagStart needs its own class
     let FreeTagStart = Terminal(TagOpener)
     let NestedTagStart = TagStartClass(TagOpener) //TODO: implement ###TagStart needs its own class
@@ -364,6 +328,10 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
     let psInline = PushAndSetState<LexicalContext, ParsingState>(.Inline)
     let psInTag = PushAndSetState<LexicalContext, ParsingState>(.InsideTag)
     let pop = PopState<LexicalContext, ParsingState>()
+    
+    //MARK: supplementary
+    let ForHead = NonTerminal("ForHead")
+    let CStyleForHeading =  NonTerminal("CStyleForHeading")
     
     override func setup() {
         wl ==> ws | ls
@@ -456,8 +424,10 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         ImplicitMemberExpression ==> "." & Identifier
         WildcardExpression ==> "_" as Symbol
         //
-        ForStatement ==> "for" & psExpression & wl* & (ForInit & wl*).opt & ";" & (Expression & wl*).opt & ";" & wl* & (Expression & wl*).opt & CodeBlock & pop
-        ForStatement |=> "for" & psExpression & wl* & "(" & wl* & (ForInit & wl*).opt & ";" & wl* & (Expression & wl*).opt & ";" & wl* & (Expression & wl*).opt & ")" & wl* & CodeBlock & pop
+        ForHead ==> "for" & psExpression & wl*
+        CStyleForHeading ==> (ForInit & wl*).opt & ";" & wl* & (Expression & wl*).opt & ";" & wl* & (Expression & wl*).opt
+        ForStatement ==> ForHead & CStyleForHeading & CodeBlock & pop
+        ForStatement |=> ForHead & "(" & wl* & CStyleForHeading & ")" & wl* & CodeBlock & pop
         ForInit ==> VariableDeclaration | ExpressionList
         //
         //ForInStatement.shouldReportTests = true

@@ -3,7 +3,7 @@
 //  SwiftParsingEngine
 //
 //  Created by 開発 on 2015/9/3.
-//  Copyright © 2015 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright © 2015-2016 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import Foundation
@@ -32,11 +32,8 @@ struct SimpleState: ParsingStateType {
     }
 }
 
-class SimpleNonTerminal: NonTerminalBase<SimpleContext, SimpleState> {
-    override init(nodeConstructor: NodeConstructorType) {
-        super.init(nodeConstructor :nodeConstructor)
-    }
-}
+typealias SimpleNonTerminal = NonTerminalBase<SimpleContext, SimpleState>
+typealias SimpleTerminal = TerminalBase<SimpleContext, SimpleState>
 
 class SimpleParser: ParserBase<SimpleContext, SimpleState> {
     
@@ -44,15 +41,15 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
     //MARK: Non terminal symbols
     //
     
-    let SimpleScript = SimpleNonTerminal{match in
+    let SimpleScript = SimpleNonTerminal {match in
         let node = SimpleScriptNode()
         node.childNodes = match.nodes.filter{$0 is SimpleNode}
         return node
     }
-    let SimpleStatement = SimpleNonTerminal{match in
+    let SimpleStatement = SimpleNonTerminal {match in
         return match.nodes.first!
     }
-    let SimpleExpression = SimpleNonTerminal{match in
+    let SimpleExpression = SimpleNonTerminal {match in
         let nodes = match.nodes
         if nodes.count == 1 {
             return nodes[0]
@@ -82,10 +79,8 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         return SimpleWhileNode(condition: nodes[1], codeBlock: nodes[2])
     }
     
-//    let SimpleAssignment = SimpleNonTerminal{_ in SimpleBinaryNode()}
     let SimpleDisjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
     let SimpleConjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
-//    let SimpleNegation = SimpleNonTerminal{_ in SimpleUnaryNode()}
     let SimpleComparative = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
     let SimpleAddition = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
     let SimpleTerm = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
@@ -102,7 +97,7 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         }
     }
     
-    let SimpleFuncall = SimpleNonTerminal{match in
+    let SimpleFuncall = SimpleNonTerminal {match in
         let nodes = match.nodes
         if nodes.count == 1 && nodes[0] is SimpleIfNode {
             return nodes[0]
@@ -113,7 +108,7 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         }
     }
     
-    let SimpleParameter = SimpleNonTerminal{match in
+    let SimpleParameter = SimpleNonTerminal {match in
         let nodes = match.nodes
         assert(nodes.count == 3 || nodes.count == 2)
         if nodes.count == 3 {
@@ -125,7 +120,7 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         }
     }
     
-    let SimpleFactor = SimpleNonTerminal{match in
+    let SimpleFactor = SimpleNonTerminal {match in
         let nodes = match.nodes
         assert(nodes.count == 1 || nodes.count == 3)
         if nodes.count == 3 {
@@ -145,13 +140,13 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         }
     }
     
-    let SimpleConstant = SimpleNonTerminal{match in
+    let SimpleConstant = SimpleNonTerminal {match in
         let nodes = match.nodes
         assert(nodes.count == 1)
         return nodes[0]
     }
     
-    let SimpleBlock = SimpleNonTerminal{match in
+    let SimpleBlock = SimpleNonTerminal {match in
         let node = SimpleBlockNode()
         node.childNodes = match.nodes.filter{$0 is SimpleNode}
         return node
@@ -161,18 +156,18 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
     //MARK: Terminal symbols
     //
     
-    let SimpleVariable = Terminal(SimpleIdentifierToken)
-    let SimpleStringConstant = Terminal(SimpleStringLiteralToken)
-    let SimpleNumericConstant = Terminal(SimpleNumericLiteralToken)
-    let SimpleEnd = Terminal(EndToken)
-    let SN = Terminal(SimpleNewlineToken)
-    let SimpleAssignmentOperator = AnySymbol("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
-    let SimpleDisjunctionOperator = AnySymbol("||", "??")
-    let SimpleConjunctionOperator = AnySymbol("&&")
-    let SimpleComparativeOperator = AnySymbol("<", "<=", ">", ">=", "==", "!=", "===", "!==")
-    let SimpleAdditionalOperator = AnySymbol("+", "-", "|", "^")
-    let SimpleMultiplicationOperator = AnySymbol("*", "/", "&", "<<", ">>", ">>>")
-    let SimplePrefixOperator = AnySymbol("+", "-", "!", "~")
+    let SimpleVariable = SimpleTerminal(SimpleIdentifierToken)
+    let SimpleStringConstant = SimpleTerminal(SimpleStringLiteralToken)
+    let SimpleNumericConstant = SimpleTerminal(SimpleNumericLiteralToken)
+    let SimpleEnd = SimpleTerminal(EndToken)
+    let SN = SimpleTerminal(SimpleNewlineToken)
+    let SimpleAssignmentOperator = AnySymbol<SimpleContext, SimpleState>("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
+    let SimpleDisjunctionOperator = AnySymbol<SimpleContext, SimpleState>("||", "??")
+    let SimpleConjunctionOperator = AnySymbol<SimpleContext, SimpleState>("&&")
+    let SimpleComparativeOperator = AnySymbol<SimpleContext, SimpleState>("<", "<=", ">", ">=", "==", "!=", "===", "!==")
+    let SimpleAdditionalOperator = AnySymbol<SimpleContext, SimpleState>("+", "-", "|", "^")
+    let SimpleMultiplicationOperator = AnySymbol<SimpleContext, SimpleState>("*", "/", "&", "<<", ">>", ">>>")
+    let SimplePrefixOperator = AnySymbol<SimpleContext, SimpleState>("+", "-", "!", "~")
     
     override func setup() {
         SimpleScript ==> (SN* & (SimpleStatement | SimpleDeclaration))* & SN* & SimpleEnd
