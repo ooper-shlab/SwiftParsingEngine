@@ -498,7 +498,7 @@ extension Symbol {
 }
 
 public protocol ParsingStateType {
-    associatedtype ContextType: LexicalContextType where ContextType.Element == ContextType
+    associatedtype ContextType: LexicalContextType
     var context: ContextType {get set}
     init()
 }

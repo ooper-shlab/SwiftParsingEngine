@@ -48,11 +48,11 @@ open class Token {
 open class EndToken: Token {}
 
 
-public protocol LexicalContextType: OptionSet, Hashable {
+public protocol LexicalContextType: OptionSet, Hashable where Element == Self {
     static var Initial: Self {get}
 }
 
-open class TokenMatcher<C: LexicalContextType> /*where C.Element == C*/ {
+open class TokenMatcher<C: LexicalContextType> {
     
     public typealias TokenizingProc = (String, NSRange)->Token
     
@@ -68,7 +68,7 @@ open class TokenMatcher<C: LexicalContextType> /*where C.Element == C*/ {
 public enum TokenizerError: Error {
     case noMatchingPattern(String)
 }
-open class TokenizerBase<C: LexicalContextType> where C.Element == C {
+open class TokenizerBase<C: LexicalContextType> {
     
     ///position in UTF-16
     open var currentPosition: Int = 0
