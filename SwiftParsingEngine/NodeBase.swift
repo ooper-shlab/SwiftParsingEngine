@@ -8,18 +8,18 @@
 
 import Foundation
 
-public class NodeBase {
+open class NodeBase {
     public init() {}
 }
 
-public class TerminalNode: NodeBase, CustomDebugStringConvertible {
-    public var token: Token
+open class TerminalNode: NodeBase, CustomDebugStringConvertible {
+    open var token: Token
     
     public init(token: Token) {
         self.token = token
     }
     
-    public var debugDescription: String {
+    open var debugDescription: String {
         return "`\(token.string)`"
     }
 }

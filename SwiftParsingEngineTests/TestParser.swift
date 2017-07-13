@@ -22,12 +22,12 @@ struct ParsingState: StackableParsingState {
         currentPosition = 0
         //tagName = String()
     }
-    mutating func pushAndSet(newContext: LexicalContext) {
+    mutating func pushAndSet(_ newContext: LexicalContext) {
         contextStack.append((context, matchingTag))
         context = newContext
         matchingTag = ""
     }
-    mutating func pushAndSet(newContext: LexicalContext, newExtraInfo: String?) {
+    mutating func pushAndSet(_ newContext: LexicalContext, newExtraInfo: String?) {
         contextStack.append((context, matchingTag))
         context = newContext
         matchingTag = newExtraInfo ?? ""
@@ -39,18 +39,18 @@ struct ParsingState: StackableParsingState {
     }
 }
 
-typealias NonTerminal = NonTerminalBase<LexicalContext, ParsingState>
+typealias NonTerminal = NonTerminalBase<ParsingState>
 
-typealias Terminal = TerminalBase<LexicalContext, ParsingState>
+typealias Terminal = TerminalBase<ParsingState>
 
 class TagStartClass: Terminal {
     override init(_ type: Token.Type) {
         super.init(type)
     }
     
-    override func match(parser: ParserBase<LexicalContext, ParsingState>) -> [SyntaxMatch<LexicalContext, ParsingState>] {
+    override func match(_ parser: ParserBase<ParsingState>) -> [SyntaxMatch<ParsingState>] {
             let savedState = parser.state
-            var result: [SyntaxMatch<LexicalContext, ParsingState>] = []
+            var result: [SyntaxMatch<ParsingState>] = []
             //print("matching to \(self.type!)")
             if let token = (try? parser.tokenizer.getToken(parser.state.context)) as? TagOpener {
                 //print("matching \(token.string.debugDescription) to \(self.type!)")
@@ -72,12 +72,11 @@ class NestedTagStartClass: Terminal {
         super.init(type)
     }
     
-    override func match(parser: ParserBase<LexicalContext, ParsingState>) -> [SyntaxMatch<LexicalContext, ParsingState>] {
+    override func match(_ parser: ParserBase<ParsingState>) -> [SyntaxMatch<ParsingState>] {
         let savedState = parser.state
-        var result: [SyntaxMatch<LexicalContext, ParsingState>] = []
+        var result: [SyntaxMatch<ParsingState>] = []
         //print("matching to \(self.type!)")
-        if let token = (try? parser.tokenizer.getToken(parser.state.context)) as? TagOpener
-        where token.tagName == parser.state.matchingTag {
+        if let token = (try? parser.tokenizer.getToken(parser.state.context)) as? TagOpener, token.tagName == parser.state.matchingTag {
             //print("matching \(token.string.debugDescription) to \(self.type!)")
             let nodes: [NodeBase] = [TerminalNode(token: token)]
             parser.state.pushAndSet(.TagEscape, newExtraInfo: token.tagName)
@@ -97,12 +96,11 @@ class TagEndClass: Terminal {
         super.init(type)
     }
     
-    override func match(parser: ParserBase<LexicalContext, ParsingState>) -> [SyntaxMatch<LexicalContext, ParsingState>] {
+    override func match(_ parser: ParserBase<ParsingState>) -> [SyntaxMatch<ParsingState>] {
         let savedState = parser.state
-        var result: [SyntaxMatch<LexicalContext, ParsingState>] = []
+        var result: [SyntaxMatch<ParsingState>] = []
         //print("matching to \(self.type!) in \(parser.state.matchingTag)")
-        if let token = (try? parser.tokenizer.getToken(parser.state.context)) as? ClosingTag
-        where token.tagName == parser.state.matchingTag {
+        if let token = (try? parser.tokenizer.getToken(parser.state.context)) as? ClosingTag, token.tagName == parser.state.matchingTag {
             //print("matching \(token.string.debugDescription) to \(self.type!)")
             let nodes: [NodeBase] = [TerminalNode(token: token)]
             parser.state.pop()
@@ -117,7 +115,7 @@ class TagEndClass: Terminal {
     }
 }
 
-class Parser: ParserBase<LexicalContext, ParsingState> {
+class Parser: ParserBase<ParsingState> {
     
     //MARK: Non terminal symbols
     let Template = NonTerminal("Template"){_ in RootNode()}
@@ -187,7 +185,7 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
     let TypeName = NonTerminal("TypeName") {_ in BlockNode()}
     let SubPattern = NonTerminal("SubPattern") {_ in BlockNode()}
     let IsPattern = NonTerminal("IsPattern") {_ in BlockNode()}
-    let Type = NonTerminal("Type") {_ in BlockNode()}
+    let TypeRef = NonTerminal("Type") {_ in BlockNode()}
     //Statement
     let Statement = NonTerminal("Statement"){_ in StatementNode()}
     let LoopStatement = NonTerminal("LoopStatement") {_ in BlockNode()}
@@ -283,7 +281,7 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
 
     //
     let wl = NonTerminal("wl") {_ in BlockNode()}
-    let Fail = FailPattern<LexicalContext, ParsingState>()
+    let Fail = FailPattern<ParsingState>()
     
     //MARK: Terminal symbols
     let PrefixOperator = Terminal(type: OperatorToken.self, "&", "+", "-", "!", "~", "++", "--")
@@ -295,39 +293,39 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
     let AssignmentOperator = Terminal(type: OperatorToken.self, "=", "+=", "-=", "*=", "/=", "%=",
         "&+=", "&-=", "&*=", "<<=", ">>=",
         "|=","&=","^=","||=","&&=","??=")
-    let TryOperator = "try" as Symbol<LexicalContext, ParsingState>
-    let Init = Terminal(IdentifierToken)
-    let Identifier = Terminal(IdentifierToken)
-    let IntegerLiteral = Terminal(IntegerToken)
-    let FloatingPointLiteral = Terminal(FloatingPointToken)
-    let StringLiteral = Terminal(StringToken)
-    let HTMLText = Terminal(HTMLTextToken)
-    let Dot = Terminal(DotToken)
+    let TryOperator = "try" as Symbol<ParsingState>
+    let Init = Terminal(IdentifierToken.self)
+    let Identifier = Terminal(IdentifierToken.self)
+    let IntegerLiteral = Terminal(IntegerToken.self)
+    let FloatingPointLiteral = Terminal(FloatingPointToken.self)
+    let StringLiteral = Terminal(StringToken.self)
+    let HTMLText = Terminal(HTMLTextToken.self)
+    let Dot = Terminal(DotToken.self)
     let DecimalDigits = Terminal(type: IntegerToken.self, {
-        $0.rangeOfCharacterFromSet(NSCharacterSet(charactersInString: "xob_")) == nil
+        $0.rangeOfCharacter(from: CharacterSet(charactersIn: "xob_")) == nil
     })
-    let ls = Terminal(NewLine) //line separator
-    let ws = Terminal(WhiteSpace) //word separator
-    let End = Terminal(EndToken)
-    let SemiColon = ";" as Symbol<LexicalContext, ParsingState>
-    let TagStart = TagStartClass(TagOpener) //###TagStart needs its own class
-    let FreeTagStart = Terminal(TagOpener)
-    let NestedTagStart = TagStartClass(TagOpener) //TODO: implement ###TagStart needs its own class
-    let MatchingClosingTag = TagEndClass(ClosingTag) //###TagEnd needs its own class
-    let FreeClosingTag = Terminal(ClosingTag)
+    let ls = Terminal(NewLine.self) //line separator
+    let ws = Terminal(WhiteSpace.self) //word separator
+    let End = Terminal(EndToken.self)
+    let SemiColon = ";" as Symbol<ParsingState>
+    let TagStart = TagStartClass(TagOpener.self) //###TagStart needs its own class
+    let FreeTagStart = Terminal(TagOpener.self)
+    let NestedTagStart = TagStartClass(TagOpener.self) //TODO: implement ###TagStart needs its own class
+    let MatchingClosingTag = TagEndClass(ClosingTag.self) //###TagEnd needs its own class
+    let FreeClosingTag = Terminal(ClosingTag.self)
 //    let TagEnd = TagEndClass(ClosingTag) //###TagEnd needs its own class
-    let InlineStart = Terminal(InlineLeader)
-    let LineStart = Terminal(LineEscape)
+    let InlineStart = Terminal(InlineLeader.self)
+    let LineStart = Terminal(LineEscape.self)
     
     //MARK: context control
-    let psExpression = PushAndSetState<LexicalContext, ParsingState>(.Expression)
-    let psBlock = PushAndSetState<LexicalContext, ParsingState>(.Block)
-    let psTagEscape = PushAndSetState<LexicalContext, ParsingState>(.TagEscape)
-    let psLineEscape = PushAndSetState<LexicalContext, ParsingState>(.LineEscape)
-    let psSimple = PushAndSetState<LexicalContext, ParsingState>(.Simple)
-    let psInline = PushAndSetState<LexicalContext, ParsingState>(.Inline)
-    let psInTag = PushAndSetState<LexicalContext, ParsingState>(.InsideTag)
-    let pop = PopState<LexicalContext, ParsingState>()
+    let psExpression = PushAndSetState<ParsingState>(.Expression)
+    let psBlock = PushAndSetState<ParsingState>(.Block)
+    let psTagEscape = PushAndSetState<ParsingState>(.TagEscape)
+    let psLineEscape = PushAndSetState<ParsingState>(.LineEscape)
+    let psSimple = PushAndSetState<ParsingState>(.Simple)
+    let psInline = PushAndSetState<ParsingState>(.Inline)
+    let psInTag = PushAndSetState<ParsingState>(.InsideTag)
+    let pop = PopState<ParsingState>()
     
     //MARK: supplementary
     let ForHead = NonTerminal("ForHead")
@@ -431,8 +429,9 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         ForInit ==> VariableDeclaration | ExpressionList
         //
         //ForInStatement.shouldReportTests = true
-        ForInStatement ==> "for" & psExpression & wl* & ("case" as Symbol).opt & Pattern & wl* & "in" & wl* & Expression & wl* & (WhereClause & wl*).opt & CodeBlock & pop
-        
+//        ForInStatement ==> ("for" as Symbol) & psExpression & wl* & ("case" as Symbol).opt & Pattern & wl* & ("in" as Symbol) & wl* & Expression & wl* & (WhereClause & wl*).opt & CodeBlock & pop
+        ForInStatement ==> SequencePattern("for" as Symbol, psExpression, wl*, ("case" as Symbol).opt, Pattern, wl*, "in" as Symbol, wl*, Expression, wl*, (WhereClause & wl*).opt, CodeBlock, pop)
+
         //VariableDeclaration
         VariableDeclaration ==> VariableDeclarationHead & PatternInitializerList
         VariableDeclaration |=> VariableDeclarationHead & VariableName & TypeAnnotation & CodeBlock
@@ -443,9 +442,12 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         VariableDeclarationHead ==> Attribute* & DeclarationModifier* & "var"
         //
         Attribute ==> "@" & AttributeName & AttributeArgumentClause
+//        DeclarationModifier ==> AnySymbol("class­","convenience­","dynamic","final­","infix­","lazy­","mutating­","nonmutating­","optional","override­","postfix","prefix­","required­","static­","unowned","weak")
+//        | "unowned" & "­(" & "­safe" & ("­)" as Symbol)
+//        | "unowned" & "­(" & "­unsafe" & ("­)" as Symbol)
         DeclarationModifier ==> AnySymbol("class­","convenience­","dynamic","final­","infix­","lazy­","mutating­","nonmutating­","optional","override­","postfix","prefix­","required­","static­","unowned","weak")
-        | "unowned" & "­(" & "­safe" & ("­)" as Symbol)
-        | "unowned" & "­(" & "­unsafe" & ("­)" as Symbol)
+        DeclarationModifier |=> "unowned" & "­(" & "­safe" & ("­)" as Symbol)
+        DeclarationModifier |=> "unowned" & "­(" & "­unsafe" & ("­)" as Symbol)
         DeclarationModifier |=> AccessLevelModifier
         AccessLevelModifier ==> ("internal­" as Symbol) | ("internal­" as Symbol) & "(" & "set" & ")"
         AccessLevelModifier |=> ("private" as Symbol) | ("private" as Symbol) & "(" & "set" & ")"
@@ -454,7 +456,7 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         IfStatement ==> "if" & psExpression & wl* & ConditionClause & wl* & CodeBlock & wl* & ElseClause.opt & pop
         ElseClause ==> "else" & wl* & CodeBlock | "else" & wl* & IfStatement
         
-        Pattern ==> SubPattern & ("as" & Type).opt
+        Pattern ==> SubPattern & ("as" & TypeRef).opt
         //SubPattern.shouldReportTests = true
         SubPattern ==> IdentifierPattern & TypeAnnotation.opt
         SubPattern |=> ValueBindingPattern
@@ -475,7 +477,7 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         TypeName ==> Identifier
         OptionalPattern ==> IdentifierPattern & "?"
         TypeCastingPattern ==> IsPattern
-        IsPattern ==> "is" & Type
+        IsPattern ==> "is" & TypeRef
         ExpressionPattern ==> Expression
         //
         Declaration ==> ImportDeclaration
@@ -528,16 +530,16 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         ThrowStatement ==> Fail
         
         //TypeAnnotation
-        TypeAnnotation ==> Attribute* & Type
-        Type ==> ArrayType
-        Type |=> DictionaryType
-        Type |=> FunctionType
-        Type |=> TypeIdentifier
-        Type |=> TupleType
-        Type |=> OptionalType
-        Type |=> ImplicitlyUnwrappedOptionalType
-        Type |=> ProtocolCompositionType
-        Type |=> MetatypeType
+        TypeAnnotation ==> Attribute* & TypeRef
+        TypeRef ==> ArrayType
+        TypeRef |=> DictionaryType
+        TypeRef |=> FunctionType
+        TypeRef |=> TypeIdentifier
+        TypeRef |=> TupleType
+        TypeRef |=> OptionalType
+        TypeRef |=> ImplicitlyUnwrappedOptionalType
+        TypeRef |=> ProtocolCompositionType
+        TypeRef |=> MetatypeType
         //
         ArrayType ==> Fail
         DictionaryType ==> Fail
@@ -560,10 +562,10 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         BinaryExpression |=> wl+ & ConditionalOperator & wl+ & (TryOperator & wl*).opt & PrefixExpression
         BinaryExpression |=> wl* & TypeCastingOperator
         //
-        TypeCastingOperator ==> "is" & wl* & Type
-        TypeCastingOperator |=> "as" & wl* & Type
-        TypeCastingOperator |=> "as" & "?" & wl* & Type
-        TypeCastingOperator |=> "as" & "!" & wl* & Type
+        TypeCastingOperator ==> "is" & wl* & TypeRef
+        TypeCastingOperator |=> "as" & wl* & TypeRef
+        TypeCastingOperator |=> "as" & "?" & wl* & TypeRef
+        TypeCastingOperator |=> "as" & "!" & wl* & TypeRef
         //
         ConditionalOperator ==> "?" & (wl+ & TryOperator).opt & wl+ & ":"
         //
@@ -643,7 +645,11 @@ class Parser: ParserBase<LexicalContext, ParsingState> {
         CaptureList ==> "[" & CaptureListItems & "]"
         CaptureListItems ==> CaptureListItem & ("," & CaptureListItem)*
         CaptureListItem ==> CaptureSpecifier & Expression
-        CaptureSpecifier ==> AnySymbol("weak", "unowned") | "unonwed" & "(" & "safe" & ")" |  "unonwed" & "(" & "unsafe" & ")"
+//        CaptureSpecifier ==> AnySymbol("weak", "unowned") | ("unonwed" as Symbol) & "(" & "safe" & ")" |  ("unonwed" as Symbol) & "(" & "unsafe" & ")"
+        CaptureSpecifier ==> AnySymbol("weak", "unowned")
+        CaptureSpecifier |=> ("unonwed" as Symbol) & "(" & "safe" & ")"
+        CaptureSpecifier |=> ("unonwed" as Symbol) & "(" & "unsafe" & ")"
+
         
         //ParameterClause
         ParameterClause ==> "(" & ")" | "(" & ParameterList & ")"

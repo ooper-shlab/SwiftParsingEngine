@@ -448,7 +448,7 @@ class SwiftParsingEngineTests: XCTestCase {
         // This is an example of a performance test case.
         let st = SimpleTokenizer(string: simpleTestedString)
         let parser = SimpleParser(tokenizer: st)
-        self.measureBlock {
+        self.measure {
             // Put the code you want to measure the time of here.
             parser.reset()
             _ = parser.parse(parser.SimpleScript)

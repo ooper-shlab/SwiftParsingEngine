@@ -31,7 +31,7 @@ class IfStatementNode: NodeBase {}
 
 class HTMLOutputNode: NodeBase {
     var text: String = ""
-    class func createNode(childNodes: [NodeBase]) -> HTMLOutputNode {
+    class func createNode(_ childNodes: [NodeBase]) -> HTMLOutputNode {
         var text = ""
         for node in childNodes {
             switch node {

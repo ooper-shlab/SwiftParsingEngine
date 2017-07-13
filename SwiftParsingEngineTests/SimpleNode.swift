@@ -10,7 +10,7 @@ import Foundation
 import SwiftParsingEngine
 
 class SimpleNode: NodeBase, CustomDebugStringConvertible {
-    var debugDescription: String {return String(self.dynamicType)}
+    var debugDescription: String {return String(describing: type(of: self))}
 }
 
 class SimpleScriptNode: SimpleNode {
@@ -18,7 +18,7 @@ class SimpleScriptNode: SimpleNode {
     var childNodes:[NodeBase] = []
     
     override var debugDescription: String {
-        return childNodes.map{String(reflecting: $0)}.joinWithSeparator(";")
+        return childNodes.map{String(reflecting: $0)}.joined(separator: ";")
     }
 }
 
@@ -50,7 +50,7 @@ class SimpleIfNode: SimpleNode {
     }
     
     override var debugDescription: String {
-        return "if( \(condition) ) {\(ifClause)}" + (elseClause != nil ? " else {\(elseClause)}" : "")
+        return "if( \(condition) ) {\(ifClause)}" + (elseClause != nil ? " else {\(elseClause!)}" : "")
     }
 }
 class SimpleWhileNode: SimpleNode {
@@ -75,7 +75,7 @@ class SimpleBinaryNode: SimpleNode {
         self.operation = operation
         self.rhs = rhs
     }
-    static func createWithNodes(nodes: [NodeBase]) -> NodeBase {
+    static func createWithNodes(_ nodes: [NodeBase]) -> NodeBase {
         assert(nodes.count > 0)
         var resultNode = nodes[0]
         var index = 1
@@ -112,7 +112,7 @@ class SimpleFuncallNode: SimpleNode {
         self.function = function
         self.arguments = arguments
     }
-    static func createWithNodes(nodes: [NodeBase]) -> NodeBase {
+    static func createWithNodes(_ nodes: [NodeBase]) -> NodeBase {
         assert(nodes.count > 0)
         var resultNode = nodes[0]
         var index = 1
@@ -138,7 +138,7 @@ class SimpleVariableNode: SimpleNode {
     init(name: String) {
         self.name = name
     }
-    class func createWithToken(token: Token) -> NodeBase {
+    class func createWithToken(_ token: Token) -> NodeBase {
         switch token.string {
             case "true", "false":
                 return SimpleBoolNode(string: token.string)
@@ -173,10 +173,10 @@ class SimpleStringNode: SimpleNode {
     static var regex = try! NSRegularExpression(pattern: "\\\\([\\\\'\"])", options: [])
     var value: String
     init(token: Token) {
-        let range = token.string.startIndex.successor()..<token.string.endIndex.predecessor()
+        let range = token.string.characters.index(after: token.string.startIndex)..<token.string.characters.index(before: token.string.endIndex)
         let string = token.string[range]
         let nsRange = NSRange(0..<string.utf16.count)
-        self.value = SimpleStringNode.regex.stringByReplacingMatchesInString(string, options: [], range: nsRange, withTemplate: "$1")
+        self.value = SimpleStringNode.regex.stringByReplacingMatches(in: string, options: [], range: nsRange, withTemplate: "$1")
     }
     
     override var debugDescription: String {
@@ -225,7 +225,7 @@ class SimpleBlockNode: SimpleNode {
     var childNodes: [NodeBase] = []
     
     override var debugDescription: String {
-        return childNodes.map{String(reflecting: $0)}.joinWithSeparator(";")
+        return childNodes.map{String(reflecting: $0)}.joined(separator: ";")
     }
 }
 //class SimpleParameterNode: SimpleNode {}

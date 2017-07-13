@@ -8,17 +8,20 @@
 
 /* Begin PBXBuildFile section */
 		D72B97B11B92A87A002BA5B2 /* SwiftParsingEngine.h in Headers */ = {isa = PBXBuildFile; fileRef = D72B97B01B92A87A002BA5B2 /* SwiftParsingEngine.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D72B97B81B92A87A002BA5B2 /* SwiftParsingEngine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D72B97AD1B92A87A002BA5B2 /* SwiftParsingEngine.framework */; settings = {ASSET_TAGS = (); }; };
+		D72B97B81B92A87A002BA5B2 /* SwiftParsingEngine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D72B97AD1B92A87A002BA5B2 /* SwiftParsingEngine.framework */; };
 		D72B97BD1B92A87B002BA5B2 /* SwiftParsingEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97BC1B92A87B002BA5B2 /* SwiftParsingEngineTests.swift */; };
-		D72B97CB1B92A91C002BA5B2 /* NodeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97C71B92A91C002BA5B2 /* NodeBase.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B97CD1B92A91C002BA5B2 /* ParserBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97C91B92A91C002BA5B2 /* ParserBase.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B97CE1B92A91C002BA5B2 /* TokenizerBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97CA1B92A91C002BA5B2 /* TokenizerBase.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B97D21B92A94B002BA5B2 /* TestNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97CF1B92A94B002BA5B2 /* TestNode.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B97D31B92A94B002BA5B2 /* TestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D01B92A94B002BA5B2 /* TestParser.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B97D41B92A94B002BA5B2 /* TestTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D11B92A94B002BA5B2 /* TestTokenizer.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B97DA1B95C355002BA5B2 /* SimpleTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D91B95C355002BA5B2 /* SimpleTokenizer.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B98131B986FDE002BA5B2 /* SimpleParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B98121B986FDE002BA5B2 /* SimpleParser.swift */; settings = {ASSET_TAGS = (); }; };
-		D72B98151B986FEC002BA5B2 /* SimpleNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B98141B986FEC002BA5B2 /* SimpleNode.swift */; settings = {ASSET_TAGS = (); }; };
+		D72B97CB1B92A91C002BA5B2 /* NodeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97C71B92A91C002BA5B2 /* NodeBase.swift */; };
+		D72B97CD1B92A91C002BA5B2 /* ParserBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97C91B92A91C002BA5B2 /* ParserBase.swift */; };
+		D72B97CE1B92A91C002BA5B2 /* TokenizerBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97CA1B92A91C002BA5B2 /* TokenizerBase.swift */; };
+		D72B97D21B92A94B002BA5B2 /* TestNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97CF1B92A94B002BA5B2 /* TestNode.swift */; };
+		D72B97D31B92A94B002BA5B2 /* TestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D01B92A94B002BA5B2 /* TestParser.swift */; };
+		D72B97D41B92A94B002BA5B2 /* TestTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D11B92A94B002BA5B2 /* TestTokenizer.swift */; };
+		D72B97DA1B95C355002BA5B2 /* SimpleTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D91B95C355002BA5B2 /* SimpleTokenizer.swift */; };
+		D72B98131B986FDE002BA5B2 /* SimpleParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B98121B986FDE002BA5B2 /* SimpleParser.swift */; };
+		D72B98151B986FEC002BA5B2 /* SimpleNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B98141B986FEC002BA5B2 /* SimpleNode.swift */; };
+		D7703E001F16F6A100319B0A /* TestNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97CF1B92A94B002BA5B2 /* TestNode.swift */; };
+		D7703E011F16F6A400319B0A /* TestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D01B92A94B002BA5B2 /* TestParser.swift */; };
+		D7703E021F16F6A800319B0A /* TestTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72B97D11B92A94B002BA5B2 /* TestTokenizer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -174,14 +177,16 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0700;
-				LastUpgradeCheck = 0700;
+				LastUpgradeCheck = 0900;
 				ORGANIZATIONNAME = "OOPer (NAGATA, Atsuyuki)";
 				TargetAttributes = {
 					D72B97AC1B92A87A002BA5B2 = {
 						CreatedOnToolsVersion = 7.0;
+						LastSwiftMigration = 0830;
 					};
 					D72B97B61B92A87A002BA5B2 = {
 						CreatedOnToolsVersion = 7.0;
+						LastSwiftMigration = 0830;
 					};
 				};
 			};
@@ -226,8 +231,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				D72B97CE1B92A91C002BA5B2 /* TokenizerBase.swift in Sources */,
+				D7703E021F16F6A800319B0A /* TestTokenizer.swift in Sources */,
 				D72B97CB1B92A91C002BA5B2 /* NodeBase.swift in Sources */,
 				D72B97CD1B92A91C002BA5B2 /* ParserBase.swift in Sources */,
+				D7703E011F16F6A400319B0A /* TestParser.swift in Sources */,
+				D7703E001F16F6A100319B0A /* TestNode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,13 +272,21 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
@@ -312,13 +328,21 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
@@ -338,6 +362,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -349,6 +374,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -360,6 +386,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -367,6 +394,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -377,6 +405,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.oopers.SwiftParsingEngine;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};
@@ -387,6 +416,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.oopers.SwiftParsingEngineTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
 		};
@@ -397,6 +427,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.oopers.SwiftParsingEngineTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
 		};

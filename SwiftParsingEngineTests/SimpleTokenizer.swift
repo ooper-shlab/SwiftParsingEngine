@@ -37,11 +37,12 @@ class SimpleSymbolToken: Token {}
 //MARK: Type 2. LecicalContext type
 //
 struct SimpleContext: LexicalContextType {
-    private(set) var rawValue: Int
+    fileprivate(set) var rawValue: Int
     init(rawValue: Int) {self.rawValue = rawValue}
     
     static let Initial = SimpleContext(rawValue: 1<<0)  //Initial context: the only context for SimpleTokenizer
 }
+
 extension SimpleContext: Hashable {
     var hashValue: Int {return rawValue}
 }
@@ -50,15 +51,16 @@ extension SimpleContext: Hashable {
 //MARK: Type 3. Tokenizer class
 //
 class SimpleTokenizer: TokenizerBase<SimpleContext> {
-    private static var _matchers: [TM] = [
-        ("\\h*([_$a-zA-Z][_$a-zA-Z0-9]*)", {SimpleIdentifierToken($0)}),
-        ("\\h*([-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?)", {SimpleNumericLiteralToken($0)}),
-        ("\\h*('(?:[^'\\\\]|\\\\'|\\\\\\\\)*'|\"(?:[^\"\\\\]|\\\\\"|\\\\\\\\)*\")", {SimpleStringLiteralToken($0)}),
+    private static let __matchers: [(String,TM.TokenizingProc)] = [
+        ("\\h*([_$a-zA-Z][_$a-zA-Z0-9]*)", {s,_ in SimpleIdentifierToken(s)}),
+        ("\\h*([-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?)", {s,_ in SimpleNumericLiteralToken(s)}),
+        ("\\h*('(?:[^'\\\\]|\\\\'|\\\\\\\\)*'|\"(?:[^\"\\\\]|\\\\\"|\\\\\\\\)*\")", {s,_ in SimpleStringLiteralToken(s)}),
         ("\\h*(--|\\+\\+|<<|>>|>>>|==|!=|>=|<=|===|!==|\\?\\?|\\+=|-=|\\*=|/=|"
-            + "^=|&=|\\|=|&&|\\|\\||&&=|\\|\\|=|\\?\\?=|<<=|>>=|>>>=)", {SimpleOperatorToken($0)}),
-        ("\\h*(?://.*)?(\n\r|\n|\r)", {SimpleNewlineToken($0)}),
-        ("\\h*([^_$0-9a-zA-Z'\"\n\r])", {SimpleSymbolToken($0)}),
-        ].map{TM($0,SimpleContext.Initial,$1)}
+            + "^=|&=|\\|=|&&|\\|\\||&&=|\\|\\|=|\\?\\?=|<<=|>>=|>>>=)", {s,_ in SimpleOperatorToken(s)}),
+        ("\\h*(?://.*)?(\n\r|\n|\r)", {s,_ in SimpleNewlineToken(s)}),
+        ("\\h*([^_$0-9a-zA-Z'\"\n\r])", {s,_ in SimpleSymbolToken(s)}),
+        ]
+    private static let _matchers: [TM] = __matchers.map{TM($0.0,SimpleContext.Initial,$0.1)}
     override var matchers: [TM] {
         return SimpleTokenizer._matchers
     }

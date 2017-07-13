@@ -32,10 +32,11 @@ struct SimpleState: ParsingStateType {
     }
 }
 
-typealias SimpleNonTerminal = NonTerminalBase<SimpleContext, SimpleState>
-typealias SimpleTerminal = TerminalBase<SimpleContext, SimpleState>
+typealias SimpleNonTerminal = NonTerminalBase<SimpleState>
+typealias SimpleTerminal = TerminalBase<SimpleState>
 
-class SimpleParser: ParserBase<SimpleContext, SimpleState> {
+
+class SimpleParser: ParserBase<SimpleState> {
     
     //
     //MARK: Non terminal symbols
@@ -46,6 +47,7 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         node.childNodes = match.nodes.filter{$0 is SimpleNode}
         return node
     }
+
     let SimpleStatement = SimpleNonTerminal {match in
         return match.nodes.first!
     }
@@ -65,7 +67,7 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         assert(nodes.count == 4)
         return SimpleVariableDeclarationNode(variable: nodes[1], initial: nodes[3])
     }
-    
+
     let SimpleIfStatement = SimpleNonTerminal{match in
         let nodes = match.nodes
         assert(nodes.count == 3 || nodes.count == 5)
@@ -78,7 +80,6 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         assert(nodes.count == 3)
         return SimpleWhileNode(condition: nodes[1], codeBlock: nodes[2])
     }
-    
     let SimpleDisjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
     let SimpleConjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
     let SimpleComparative = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
@@ -155,20 +156,20 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
     //
     //MARK: Terminal symbols
     //
-    
-    let SimpleVariable = SimpleTerminal(SimpleIdentifierToken)
-    let SimpleStringConstant = SimpleTerminal(SimpleStringLiteralToken)
-    let SimpleNumericConstant = SimpleTerminal(SimpleNumericLiteralToken)
-    let SimpleEnd = SimpleTerminal(EndToken)
-    let SN = SimpleTerminal(SimpleNewlineToken)
-    let SimpleAssignmentOperator = AnySymbol<SimpleContext, SimpleState>("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
-    let SimpleDisjunctionOperator = AnySymbol<SimpleContext, SimpleState>("||", "??")
-    let SimpleConjunctionOperator = AnySymbol<SimpleContext, SimpleState>("&&")
-    let SimpleComparativeOperator = AnySymbol<SimpleContext, SimpleState>("<", "<=", ">", ">=", "==", "!=", "===", "!==")
-    let SimpleAdditionalOperator = AnySymbol<SimpleContext, SimpleState>("+", "-", "|", "^")
-    let SimpleMultiplicationOperator = AnySymbol<SimpleContext, SimpleState>("*", "/", "&", "<<", ">>", ">>>")
-    let SimplePrefixOperator = AnySymbol<SimpleContext, SimpleState>("+", "-", "!", "~")
-    
+   
+    let SimpleVariable = SimpleTerminal(SimpleIdentifierToken.self)
+    let SimpleStringConstant = SimpleTerminal(SimpleStringLiteralToken.self)
+    let SimpleNumericConstant = SimpleTerminal(SimpleNumericLiteralToken.self)
+    let SimpleEnd = SimpleTerminal(EndToken.self)
+    let SN = SimpleTerminal(SimpleNewlineToken.self)
+    let SimpleAssignmentOperator = AnySymbol<SimpleState>("=", "+=", "-=", "*=", "/=", "^=", "&=", "|=", "<<=", ">>=", ">>>=", "??=")
+    let SimpleDisjunctionOperator = AnySymbol<SimpleState>("||", "??")
+    let SimpleConjunctionOperator = AnySymbol<SimpleState>("&&")
+    let SimpleComparativeOperator = AnySymbol<SimpleState>("<", "<=", ">", ">=", "==", "!=", "===", "!==")
+    let SimpleAdditionalOperator = AnySymbol<SimpleState>("+", "-", "|", "^")
+    let SimpleMultiplicationOperator = AnySymbol<SimpleState>("*", "/", "&", "<<", ">>", ">>>")
+    let SimplePrefixOperator = AnySymbol<SimpleState>("+", "-", "!", "~")
+
     override func setup() {
         SimpleScript ==> (SN* & (SimpleStatement | SimpleDeclaration))* & SN* & SimpleEnd
         
@@ -210,8 +211,9 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
         SimpleIfStatement ==> "if" & SimpleExpression & SimpleBlock & ("else" & SimpleBlock).opt
         SimpleWhileStatement ==> "while" & SimpleExpression & SimpleBlock
     }
-    
+
     var _state: SimpleState = SimpleState()
+
     override var state: SimpleState {
         get {
             _state.currentPosition = tokenizer.currentPosition
@@ -222,10 +224,11 @@ class SimpleParser: ParserBase<SimpleContext, SimpleState> {
             tokenizer.currentPosition = _state.currentPosition
         }
     }
-    
+
     override init(tokenizer: TokenizerBase<SimpleContext>) {
         super.init(tokenizer: tokenizer)
     }
+ 
 }
 
 
