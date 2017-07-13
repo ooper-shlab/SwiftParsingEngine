@@ -181,7 +181,7 @@ open class TerminalBase<S: ParsingStateType>: PatternBase<S> {
         do {
             let token = try parser.tokenizer.getToken(parser.state.context)
             //print("matching \(token.string.debugDescription) to \(self.type!)")
-            if type(of: token) == self.type {
+            if Swift.type(of: token) == self.type {
                 let nodes: [NodeBase] = [TerminalNode(token: token)]
                 result = [SyntaxMatch(pattern: self, nodes: nodes, state: parser.state)]
                 //print("\(self.type!)-->succeeded \(token.string.debugDescription)")

@@ -116,7 +116,7 @@ open class TokenizerBase<C: LexicalContextType> where C.Element == C {
         where matcher.context.contains(context) {
             //print("--"+matcher.regex.pattern.debugDescription)
             if let match = matcher.regex.firstMatch(in: string, options: [], range: range) {
-                let range = match.numberOfRanges == 1 ? match.range : match.rangeAt(1)
+                let range = match.numberOfRanges == 1 ? match.range : match.range(at: 1)
                 let substring = (string as NSString).substring(with: range)
                 let token = matcher.proc(substring, match.range)
                 cachedToken[context]![currentPosition] = token //###

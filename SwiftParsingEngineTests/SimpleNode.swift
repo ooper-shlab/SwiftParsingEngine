@@ -176,7 +176,7 @@ class SimpleStringNode: SimpleNode {
         let range = token.string.characters.index(after: token.string.startIndex)..<token.string.characters.index(before: token.string.endIndex)
         let string = token.string[range]
         let nsRange = NSRange(0..<string.utf16.count)
-        self.value = SimpleStringNode.regex.stringByReplacingMatches(in: string, options: [], range: nsRange, withTemplate: "$1")
+        self.value = SimpleStringNode.regex.stringByReplacingMatches(in: String(string), options: [], range: nsRange, withTemplate: "$1")
     }
     
     override var debugDescription: String {
