@@ -3,7 +3,7 @@
 //  SwiftParsingEngine
 //
 //  Created by OOPer in cooperation with shlab.jp, on 2015/8/23.
-//  Copyright © 2015−2016 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright © 2015−2017 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import Foundation
@@ -60,13 +60,13 @@ open class OptPattern<S: ParsingStateType>: PatternBase<S> {
     var basePattern: PatternBase<S>
     init(pattern: PatternBase<S>) {
         self.basePattern = pattern
-        super.init()
+        super.init("(\(pattern)).opt")
     }
     
     override func match(_ parser: ParserBase<S>) -> [SyntaxMatch<S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<S>] = []
-        result += basePattern.match(parser)
+        result += parser.matches(for: basePattern)
         result.append(SyntaxMatch(pattern: self, nodes: [], state: savedState))
         parser.state = savedState
         return result
@@ -77,7 +77,7 @@ open class AnyPattern<S: ParsingStateType>: PatternBase<S> {
     var patterns: [PatternBase<S>]
     init(_ patterns: [PatternBase<S>]) {
         self.patterns = patterns
-        super.init()
+        super.init("(\(patterns.map{$0.string}.joined(separator: " | ")))")
     }
     override func or(_ pattern: PatternBase<S>)->AnyPattern<S> {
         if let anyPattern = pattern as? AnyPattern<S> {
@@ -91,7 +91,7 @@ open class AnyPattern<S: ParsingStateType>: PatternBase<S> {
         let savedState = parser.state
         var result: [SyntaxMatch<S>] = []
         for pattern in patterns {
-            result += pattern.match(parser)
+            result += parser.matches(for: pattern)
             parser.state = savedState
         }
         return result
@@ -100,7 +100,7 @@ open class AnyPattern<S: ParsingStateType>: PatternBase<S> {
 
 open class FailPattern<S: ParsingStateType>: PatternBase<S> {
     public override init() {
-        super.init()
+        super.init("_fail_")
     }
     
     override func match(_ parser: ParserBase<S>) -> [SyntaxMatch<S>] {
@@ -114,15 +114,10 @@ open class NonTerminalBase<S: ParsingStateType>: PatternBase<S> {
     open var nodeConstructor: NodeConstructorType?
     ///
     var pattern: PatternBase<S>? = nil
-    ///Debuggin: report matches
-    open var shouldReportMatches: Bool = false
-    ///Debuggin: report tests
-    open var shouldReportTests: Bool = false
-    
     
     public init(nodeConstructor: @escaping NodeConstructorType) {
         self.nodeConstructor = nodeConstructor
-        super.init()
+        super.init("_nt_")
     }
     
     public init(_ name: String, nodeConstructor: @escaping NodeConstructorType) {
@@ -141,19 +136,7 @@ open class NonTerminalBase<S: ParsingStateType>: PatternBase<S> {
     override func match(_ parser: ParserBase<S>) -> [SyntaxMatch<S>] {
         guard let pattern = self.pattern else {fatalError("match called before definition")}
         if nodeConstructor == nil {nodeConstructor = DefaultNodeConstructor}
-        if shouldReportTests {
-            print("\(string) about to start testing")
-        }
-        let matches = pattern.match(parser)
-        if (shouldReportMatches || shouldReportTests) && !matches.isEmpty {
-            print("\(string) found matches(\(matches.count))")
-        }
-        if shouldReportTests {
-            if matches.isEmpty {
-                print("\(string) testing failed")
-            }
-            print("\(string) end testing")
-        }
+        let matches = parser.matches(for: pattern)
         return matches.map {match in
             let nodes = [nodeConstructor!(match)]
             let state = match.state
@@ -180,12 +163,12 @@ open class TerminalBase<S: ParsingStateType>: PatternBase<S> {
     public init(_ type: Token.Type) {
         self.type = type
         self.predicate = {_ in true}
-        super.init()
+        super.init(String(describing: type))
     }
     public init(type: Token.Type, _ predicate: @escaping (String)->Bool) {
         self.type = type
         self.predicate = predicate
-        super.init()
+        super.init(String(describing: type))
     }
     public convenience init(type: Token.Type, _ names: String...) {
         let nameSet = Set(names)
@@ -330,7 +313,7 @@ open class SequencePattern<S: ParsingStateType>: PatternBase<S> {
     
     init(patterns: [PatternBase<S>]) {
         self.patterns = patterns
-        super.init("")
+        super.init("("+patterns.map{$0.string}.joined(separator: " & ")+")")
     }
     
     public convenience init(_ patterns: PatternBase<S>...) {
@@ -344,7 +327,7 @@ open class SequencePattern<S: ParsingStateType>: PatternBase<S> {
             return SequencePattern(patterns: self.patterns + [pattern])
         }
     }
-    
+
     override func match(_ parser: ParserBase<S>) -> [SyntaxMatch<S>] {
         let savedState = parser.state
         var result: [SyntaxMatch<S>] = [SyntaxMatch(pattern: self, nodes: [], state: savedState)]
@@ -352,7 +335,7 @@ open class SequencePattern<S: ParsingStateType>: PatternBase<S> {
             var updatedResult: [SyntaxMatch<S>] = []
             for match in result {
                 parser.state = match.state
-                let nextMatches = pattern.match(parser)
+                let nextMatches = parser.matches(for: pattern)
                 for nextMatch in nextMatches {
                     let nodes = match.nodes + nextMatch.nodes
                     let state = nextMatch.state
@@ -360,8 +343,14 @@ open class SequencePattern<S: ParsingStateType>: PatternBase<S> {
                 }
             }
             result = updatedResult
+            if result.isEmpty {
+                break
+            }
         }
         parser.state = savedState
+        if result.count == 1 && result[0].nodes.count == 0 {
+            return []
+        }
         return result
     }
 }
@@ -371,14 +360,14 @@ open class RepeatPattern<S: ParsingStateType>: PatternBase<S> {
     var minCount: Int = 0
     init(_ pattern: PatternBase<S>) {
         self.pattern = pattern
-        super.init("")
+        super.init("(\(pattern.string))"+(minCount==0 ? "*" : "+"))
     }
     init(_ pattern: PatternBase<S>, minCount: Int) {
         self.pattern = pattern
         self.minCount = minCount
-        super.init("")
+        super.init("(\(pattern.string))"+(minCount==0 ? "*" : "+"))
     }
-    
+
     override func match(_ parser: ParserBase<S>) -> [SyntaxMatch<S>] {
         let savedState = parser.state
         var lastMatches: [SyntaxMatch<S>] = [SyntaxMatch(pattern: self, nodes: [], state: savedState)]
@@ -391,7 +380,7 @@ open class RepeatPattern<S: ParsingStateType>: PatternBase<S> {
             var updatedResult: [SyntaxMatch<S>] = []
             for lastMatch in lastMatches {
                 parser.state = lastMatch.state
-                let nextMatches = pattern.match(parser)
+                let nextMatches = parser.matches(for: pattern)
                 for nextMatch in nextMatches {
                     let nodes = lastMatch.nodes + nextMatch.nodes
                     let state = nextMatch.state
@@ -414,9 +403,11 @@ open class RepeatPattern<S: ParsingStateType>: PatternBase<S> {
 open class LocalMaximumRepeatPattern<S: ParsingStateType>: RepeatPattern<S> {
     override init(_ pattern: PatternBase<S>) {
         super.init(pattern)
+        self.string += "->"
     }
     override init(_ pattern: PatternBase<S>, minCount: Int) {
         super.init(pattern, minCount: minCount)
+        self.string += "->"
     }
     
     override func match(_ parser: ParserBase<S>) -> [SyntaxMatch<S>] {
@@ -431,7 +422,7 @@ open class LocalMaximumRepeatPattern<S: ParsingStateType>: RepeatPattern<S> {
             var updatedResult: [SyntaxMatch<S>] = []
             for lastMatch in lastMatches {
                 parser.state = lastMatch.state
-                let nextMatches = pattern.match(parser)
+                let nextMatches = parser.matches(for: pattern)
                 for nextMatch in nextMatches {
                     let nodes = lastMatch.nodes + nextMatch.nodes
                     let state = nextMatch.state
@@ -523,6 +514,12 @@ open class ParserBase<S: ParsingStateType> {
     
     open var tokenizer: TokenizerBase<S.ContextType>
     open var state: S = S()
+    
+    ///Debuggin: report matches
+    open var shouldReportMatches: Bool = false
+    ///Debuggin: report tests
+    open var shouldReportTests: Bool = false
+    
     open func setup() {
         fatalError("Abstract method \(#function) not implemented")
     }
@@ -541,12 +538,29 @@ open class ParserBase<S: ParsingStateType> {
     
     open func parse(_ nt: NonTerminalBase<S>) -> NodeBase? {
         assert(nt.pattern != nil && nt.nodeConstructor != nil)
-        let matches = nt.pattern!.match(self)
+        let matches = self.matches(for: nt.pattern!)
         if matches.count > 0 {
             //First match only, as for now
             return nt.nodeConstructor!(matches.first!)
         } else {
             return nil
         }
+    }
+    
+    open func matches(for pattern: PatternBase<S>) -> [SyntaxMatch<S>] {
+        if shouldReportTests {
+            print("Start: \(pattern.string)")
+        }
+        let result = pattern.match(self)
+        if (shouldReportMatches || shouldReportTests) && !result.isEmpty {
+            print("Found: \(pattern.string) found matches[\(result.count)]")
+        }
+        if shouldReportTests {
+            if result.isEmpty {
+                print("Fail : \(pattern.string)")
+            }
+            print("End  : \(pattern.string)")
+        }
+        return result
     }
 }

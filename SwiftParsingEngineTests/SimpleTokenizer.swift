@@ -3,7 +3,7 @@
 //  SwiftParsingEngine
 //
 //  Created by OOPer in cooperation with shlab.jp, on 2015/9/1.
-//  Copyright © 2015 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright © 2015-2017 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import Foundation
@@ -52,13 +52,13 @@ extension SimpleContext: Hashable {
 //
 class SimpleTokenizer: TokenizerBase<SimpleContext> {
     private static let __matchers: [(String,TM.TokenizingProc)] = [
-        ("\\h*([_$a-zA-Z][_$a-zA-Z0-9]*)", {s,_ in SimpleIdentifierToken(s)}),
-        ("\\h*([-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?)", {s,_ in SimpleNumericLiteralToken(s)}),
-        ("\\h*('(?:[^'\\\\]|\\\\'|\\\\\\\\)*'|\"(?:[^\"\\\\]|\\\\\"|\\\\\\\\)*\")", {s,_ in SimpleStringLiteralToken(s)}),
+        ("\\h*([_$a-zA-Z][_$a-zA-Z0-9]*)", {s,r in SimpleIdentifierToken(s,r)}),
+        ("\\h*([-+]?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?)", {s,r in SimpleNumericLiteralToken(s,r)}),
+        ("\\h*('(?:[^'\\\\]|\\\\'|\\\\\\\\)*'|\"(?:[^\"\\\\]|\\\\\"|\\\\\\\\)*\")", {s,r in SimpleStringLiteralToken(s,r)}),
         ("\\h*(--|\\+\\+|<<|>>|>>>|==|!=|>=|<=|===|!==|\\?\\?|\\+=|-=|\\*=|/=|"
-            + "^=|&=|\\|=|&&|\\|\\||&&=|\\|\\|=|\\?\\?=|<<=|>>=|>>>=)", {s,_ in SimpleOperatorToken(s)}),
-        ("\\h*(?://.*)?(\n\r|\n|\r)", {s,_ in SimpleNewlineToken(s)}),
-        ("\\h*([^_$0-9a-zA-Z'\"\n\r])", {s,_ in SimpleSymbolToken(s)}),
+            + "^=|&=|\\|=|&&|\\|\\||&&=|\\|\\|=|\\?\\?=|<<=|>>=|>>>=)", {s,r in SimpleOperatorToken(s,r)}),
+        ("\\h*(?://.*)?(\n\r|\n|\r)", {s,r in SimpleNewlineToken(s,r)}),
+        ("\\h*([^_$0-9a-zA-Z'\"\n\r])", {s,r in SimpleSymbolToken(s,r)}),
         ]
     private static let _matchers: [TM] = __matchers.map{TM($0.0,SimpleContext.Initial,$0.1)}
     override var matchers: [TM] {

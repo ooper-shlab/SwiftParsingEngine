@@ -3,7 +3,7 @@
 //  SwiftParsingEngine
 //
 //  Created by OOPer in cooperation with shlab.jp, on 2015/8/27.
-//  Copyright © 2015 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright © 2015-2017 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import Foundation

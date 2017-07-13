@@ -3,7 +3,7 @@
 //  SwiftParsingEngine
 //
 //  Created by 開発 on 2015/9/3.
-//  Copyright © 2015-2016 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright © 2015-2017 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import Foundation
@@ -42,16 +42,16 @@ class SimpleParser: ParserBase<SimpleState> {
     //MARK: Non terminal symbols
     //
     
-    let SimpleScript = SimpleNonTerminal {match in
+    let SimpleScript = SimpleNonTerminal("Script") {match in
         let node = SimpleScriptNode()
         node.childNodes = match.nodes.filter{$0 is SimpleNode}
         return node
     }
 
-    let SimpleStatement = SimpleNonTerminal {match in
+    let SimpleStatement = SimpleNonTerminal("Statement") {match in
         return match.nodes.first!
     }
-    let SimpleExpression = SimpleNonTerminal {match in
+    let SimpleExpression = SimpleNonTerminal("Expression") {match in
         let nodes = match.nodes
         if nodes.count == 1 {
             return nodes[0]
@@ -62,31 +62,31 @@ class SimpleParser: ParserBase<SimpleState> {
             fatalError("Parsing inconsistency error in SimpleExpression")
         }
     }
-    let SimpleDeclaration = SimpleNonTerminal{match in
+    let SimpleDeclaration = SimpleNonTerminal("Declaration") {match in
         let nodes = match.nodes
         assert(nodes.count == 4)
         return SimpleVariableDeclarationNode(variable: nodes[1], initial: nodes[3])
     }
 
-    let SimpleIfStatement = SimpleNonTerminal{match in
+    let SimpleIfStatement = SimpleNonTerminal("ifStatement") {match in
         let nodes = match.nodes
         assert(nodes.count == 3 || nodes.count == 5)
         let elseClause: NodeBase? = nodes.count == 5 ? nodes[4] : nil
         return SimpleIfNode(condition: nodes[1], ifClause: nodes[2], elseClause: elseClause)
     }
     
-    let SimpleWhileStatement = SimpleNonTerminal{match in
+    let SimpleWhileStatement = SimpleNonTerminal("whileStatement") {match in
         let nodes = match.nodes
         assert(nodes.count == 3)
         return SimpleWhileNode(condition: nodes[1], codeBlock: nodes[2])
     }
-    let SimpleDisjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
-    let SimpleConjunction = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
-    let SimpleComparative = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
-    let SimpleAddition = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
-    let SimpleTerm = SimpleNonTerminal{SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleDisjunction = SimpleNonTerminal("Disjunction") {SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleConjunction = SimpleNonTerminal("Conjunction"){SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleComparative = SimpleNonTerminal("Comparative") {SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleAddition = SimpleNonTerminal("Addition") {SimpleBinaryNode.createWithNodes($0.nodes)}
+    let SimpleTerm = SimpleNonTerminal("Term") {SimpleBinaryNode.createWithNodes($0.nodes)}
     
-    let SimplePrefix = SimpleNonTerminal{match in
+    let SimplePrefix = SimpleNonTerminal("Prefix") {match in
         let nodes = match.nodes
         if nodes.count == 1 {
             return nodes[0]
@@ -98,7 +98,7 @@ class SimpleParser: ParserBase<SimpleState> {
         }
     }
     
-    let SimpleFuncall = SimpleNonTerminal {match in
+    let SimpleFuncall = SimpleNonTerminal("Funcall") {match in
         let nodes = match.nodes
         if nodes.count == 1 && nodes[0] is SimpleIfNode {
             return nodes[0]
@@ -109,7 +109,7 @@ class SimpleParser: ParserBase<SimpleState> {
         }
     }
     
-    let SimpleParameter = SimpleNonTerminal {match in
+    let SimpleParameter = SimpleNonTerminal("Parameter") {match in
         let nodes = match.nodes
         assert(nodes.count == 3 || nodes.count == 2)
         if nodes.count == 3 {
@@ -121,7 +121,7 @@ class SimpleParser: ParserBase<SimpleState> {
         }
     }
     
-    let SimpleFactor = SimpleNonTerminal {match in
+    let SimpleFactor = SimpleNonTerminal("Factor") {match in
         let nodes = match.nodes
         assert(nodes.count == 1 || nodes.count == 3)
         if nodes.count == 3 {
@@ -141,13 +141,13 @@ class SimpleParser: ParserBase<SimpleState> {
         }
     }
     
-    let SimpleConstant = SimpleNonTerminal {match in
+    let SimpleConstant = SimpleNonTerminal("Constant") {match in
         let nodes = match.nodes
         assert(nodes.count == 1)
         return nodes[0]
     }
     
-    let SimpleBlock = SimpleNonTerminal {match in
+    let SimpleBlock = SimpleNonTerminal("Block") {match in
         let node = SimpleBlockNode()
         node.childNodes = match.nodes.filter{$0 is SimpleNode}
         return node

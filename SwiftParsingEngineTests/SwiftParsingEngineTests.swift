@@ -3,36 +3,38 @@
 //  SwiftParsingEngineTests
 //
 //  Created by OOPer in cooperation with shlab.jp, on 2015/8/30.
-//  Copyright © 2015 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright © 2015-2017 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import XCTest
 @testable import SwiftParsingEngine
-let NL = "\n"
+
 class SwiftParsingEngineTests: XCTestCase {
-    let testedString =
-        "`// This is a line comment."+NL
-        + "<!DOCTYPE html>"+NL
-        + "<html>"+NL
-        + "  <head>"+NL
-        + "    <meta charset=\"UTF-8\">"+NL
-        + "  </head>"+NL
-        + "  <body>"+NL
-        + "    <table>"+NL
-        + "    `for row in rows {"+NL
-        + "      <tr>"+NL
-        + "        <td`if row.img == nil {: colspan=\"2\"}>"+NL
-        + "          `row.title"+NL
-        + "        </td>"+NL
-        + "        `row.img.enclose{"+NL
-        + "        <td>"+NL
-        + "          <img src=\"/img/`$0\">"+NL
-        + "        </td>}"+NL
-        + "      </tr>"+NL
-        + "    }"+NL
-        + "    </table>"+NL
-        + "  </body>"+NL
-        + "</html>"+NL
+    let testedString = """
+        `// This is a line comment.
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset=\"UTF-8\">
+          </head>
+          <body>
+            <table>
+            `for row in rows {
+              <tr>
+                <td`if row.img == nil {: colspan=\"2\"}>
+                  `row.title
+                </td>
+                `row.img.enclose{
+                <td>
+                  <img src=\"/img/`$0\">
+                </td>}
+              </tr>
+            }
+            </table>
+          </body>
+        </html>
+
+        """
     var tokenizer: Tokenizer!
     
     override func setUp() {
@@ -368,28 +370,30 @@ class SwiftParsingEngineTests: XCTestCase {
     }
     
     func testParser1b() {
-        let str = ""
-            + "    `for row in rows {"+NL
-            + "      <tr>"+NL
-            + "        <td`if row.img == nil {: colspan=\"2\"}>"+NL
-            + "          `row.title"+NL
-            + "        </td>"+NL
-            + "        `row.img.enclose{"+NL
-            + "        <td>"+NL
-            + "          <img src=\"/img/`$0\">"+NL
-            + "        </td>}"+NL
-            + "      </tr>"+NL
-            + "    }"+NL
+        let str = """
+                `for row in rows {
+                  <tr>
+                    <td`if row.img == nil {: colspan=\"2\"}>
+                      `row.title
+                    </td>
+                    `row.img.enclose{
+                    <td>
+                      <img src=\"/img/`$0\">
+                    </td>}
+                  </tr>
+                }
+                """
         let tk = Tokenizer(string: str)
         let ps = Parser(tokenizer: tk)
         let result = ps.parse(ps.Template)
         XCTAssert(result != nil)
     }
     
-    let simpleTestedString =
-    "var x = 0" + NL
-        + "if x == 0 {print('')}"
-    
+    let simpleTestedString = """
+    var x = 0
+    if x == 0 {print('')}
+    """
+
     func testTokenizer2() {
         let st = SimpleTokenizer(string: simpleTestedString)
         do {
@@ -454,5 +458,4 @@ class SwiftParsingEngineTests: XCTestCase {
             _ = parser.parse(parser.SimpleScript)
         }
     }
-    
 }

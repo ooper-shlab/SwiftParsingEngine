@@ -3,7 +3,7 @@
 //  SwiftParsingEngine
 //
 //  Created by OOPer in cooperation with shlab.jp, on 2015/8/19.
-//  Copyright © 2015 OOPer (NAGATA, Atsuyuki). All rights reserved.
+//  Copyright © 2015-2017 OOPer (NAGATA, Atsuyuki). All rights reserved.
 //
 
 import Foundation
@@ -35,14 +35,14 @@ open class Token {
         self.range = range
         self.string = string
     }
-    public init(_ string: String) {
-        self.string = string
-        self.range = NSRange()
-    }
-    public init() {
-        self.string = ""
-        self.range = NSRange()
-    }
+//    public init(_ string: String) {
+//        self.string = string
+//        self.range = NSRange()
+//    }
+//    public init() {
+//        self.string = ""
+//        self.range = NSRange()
+//    }
 }
 
 open class EndToken: Token {}
