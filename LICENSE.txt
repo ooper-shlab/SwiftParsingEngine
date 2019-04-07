@@ -1,7 +1,7 @@
 SwiftParsingEngine: An experimental syntax & lexical parser for iOS.
 Version:  1.0 beta 3
 
-Copyright (c) 2015-2017, OOPer(NAGATA, Atsuyuki)
+Copyright (c) 2015-2019, OOPer(NAGATA, Atsuyuki)
 All rights reserved.
 
 Use of any parts(functions, classes or any other program language components)

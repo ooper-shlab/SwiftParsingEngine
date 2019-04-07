@@ -173,8 +173,7 @@ class SimpleStringNode: SimpleNode {
     static var regex = try! NSRegularExpression(pattern: "\\\\([\\\\'\"])", options: [])
     var value: String
     init(token: Token) {
-        let range = token.string.characters.index(after: token.string.startIndex)..<token.string.characters.index(before: token.string.endIndex)
-        let string = token.string[range]
+        let string = token.string.dropFirst().dropLast()
         let nsRange = NSRange(0..<string.utf16.count)
         self.value = SimpleStringNode.regex.stringByReplacingMatches(in: String(string), options: [], range: nsRange, withTemplate: "$1")
     }

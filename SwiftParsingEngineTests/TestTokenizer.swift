@@ -42,8 +42,7 @@ class IdentifierToken: Token {
             return FalseToken(string, range)
         default:
             if string.hasPrefix("`") && string.hasSuffix("`") {
-                let nameRange = string.characters.index(after: string.startIndex)..<string.characters.index(before: string.endIndex)
-                return IdentifierToken(string.substring(with: nameRange), range)
+                return IdentifierToken(String(string.dropFirst().dropLast()), range)
             }
             return IdentifierToken(string, range)
         }
@@ -90,13 +89,13 @@ class TagEscape: Token {}
 class TagOpener: Token {
     var tagName: String {
         //remove "<"
-        return string.substring(from: string.characters.index(after: string.startIndex))
+        return String(string.dropFirst())
     }
 }
 class ClosingTag: Token {
     var tagName: String {
         //remove "</"
-        return string.substring(from: string.characters.index(string.startIndex, offsetBy: 2))
+        return String(string.dropFirst(2))
     }
 }
 

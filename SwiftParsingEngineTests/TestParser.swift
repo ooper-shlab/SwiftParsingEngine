@@ -140,7 +140,7 @@ class Parser: ParserBase<ParsingState> {
     let TrailingClosure = NonTerminal("TrailingClosure"){_ in BlockNode()}
     let ClosureExpression = NonTerminal("ClosureExpression"){_ in BlockNode()}
     let IfStatement = NonTerminal("IfStatement"){_ in IfStatementNode()}
-    let ForStatement = NonTerminal("ForStatement"){_ in ForStatementNode()}
+//    let ForStatement = NonTerminal("ForStatement"){_ in ForStatementNode()}
     let ForInStatement = NonTerminal("ForInStatement"){_ in ForStatementNode()}
     let GenericArgumentClause = NonTerminal("GenericArgumentClause"){_ in BlockNode()}
     let HTMLOutputStatement = NonTerminal("HTMLOutputStatement"){match in HTMLOutputNode.createNode(match.nodes)}
@@ -350,7 +350,7 @@ class Parser: ParserBase<ParsingState> {
         Statement |=> HTMLOutputStatement
         Statement |=> TaggedBlock
         //
-        LoopStatement ==> ForStatement | ForInStatement
+        LoopStatement ==> /*ForStatement |*/ ForInStatement
         BranchStatement ==> IfStatement | GuardStatement | SwitchStatement
         DeferStatement ==> Fail
         DoStatement ==> Fail
@@ -423,10 +423,10 @@ class Parser: ParserBase<ParsingState> {
         WildcardExpression ==> "_" as Symbol
         //
         ForHead ==> "for" & psExpression & wl*
-        CStyleForHeading ==> (ForInit & wl*).opt & ";" & wl* & (Expression & wl*).opt & ";" & wl* & (Expression & wl*).opt
-        ForStatement ==> ForHead & CStyleForHeading & CodeBlock & pop
-        ForStatement |=> ForHead & "(" & wl* & CStyleForHeading & ")" & wl* & CodeBlock & pop
-        ForInit ==> VariableDeclaration | ExpressionList
+//        CStyleForHeading ==> (ForInit & wl*).opt & SemiColon & wl* & (Expression & wl*).opt & SemiColon & wl* & (Expression & wl*).opt
+//        ForStatement ==> ForHead & CStyleForHeading & CodeBlock & pop
+//        ForStatement |=> ForHead & "(" & wl* & CStyleForHeading & ")" & wl* & CodeBlock & pop
+//        ForInit ==> VariableDeclaration | ExpressionList
         //
         //ForInStatement.shouldReportTests = true
 //        ForInStatement ==> ("for" as Symbol) & psExpression & wl* & ("case" as Symbol).opt & Pattern & wl* & ("in" as Symbol) & wl* & Expression & wl* & (WhereClause & wl*).opt & CodeBlock & pop
@@ -453,7 +453,7 @@ class Parser: ParserBase<ParsingState> {
         AccessLevelModifier |=> ("private" as Symbol) | ("private" as Symbol) & "(" & "set" & ")"
         AccessLevelModifier |=> ("public­" as Symbol) | ("public­" as Symbol) & "(" & "set" & ")"
         //
-        IfStatement ==> "if" & psExpression & wl* & ConditionClause & wl* & CodeBlock & wl* & ElseClause.opt & pop
+        IfStatement ==> SequencePattern("if" as Symbol, psExpression, wl*, ConditionClause, wl*, CodeBlock, wl*, ElseClause.opt, pop)
         ElseClause ==> "else" & wl* & CodeBlock | "else" & wl* & IfStatement
         
         Pattern ==> SubPattern & ("as" & TypeRef).opt
@@ -601,7 +601,7 @@ class Parser: ParserBase<ParsingState> {
         FreeSelfClosingTag ==> FreeTagStart & psInTag & InsideTagContent* & "/>" & pop
         //InsideTagContent
         InsideTagContent ==> HTMLText
-        InsideTagContent |=> IfStatement | ForStatement | ForInStatement
+        InsideTagContent |=> IfStatement | /*ForStatement |*/ ForInStatement
         InsideTagContent |=> SimpleExpression
         //
         //SimpleExpression.shouldReportMatches = true
@@ -621,7 +621,7 @@ class Parser: ParserBase<ParsingState> {
         InlineBlock ==> InlineStart & psInline & InlineContent* & "}" & pop
         //InlineContent.shouldReportTests = true
         InlineContent ==> HTMLText
-        InlineContent |=> IfStatement | ForStatement | ForInStatement
+        InlineContent |=> IfStatement | /*ForStatement |*/ ForInStatement
         InlineContent |=> SimpleExpression
         
         //LineBlock
